@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkSphere — HR Manager Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #050b18;
+    --bg-card: #0a1022;
+    --bg-card-hover: #11182c;
+    --bg-elevated: #151d33;
+    --border-subtle: rgba(99, 179, 237, 0.08);
+    --border-glow: rgba(99, 179, 237, 0.2);
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-red: #f43f5e;
+    --accent-violet: #818cf8;
+    --accent-pink: #ec4899;
+    --text-primary: #f0f4fe;
+    --text-secondary: #8ba3c2;
+    --text-muted: #4a6080;
+    --gradient-blue: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+    --gradient-heart: linear-gradient(135deg, #f43f5e, #f97316);
+    --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 8px 32px rgba(59, 130, 246, 0.15);
+    --radius-xl: 24px;
+    --radius-lg: 18px;
+    --radius-md: 20px;
+    --radius-sm: 14px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 20px 24px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse 800px 600px at 20% 30%, rgba(59,130,246,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 600px 500px at 85% 70%, rgba(6,182,212,0.03) 0%, transparent 70%);
+    z-index: 0;
+  }
+
+  .app-container { max-width: 1600px; margin: 0 auto; position: relative; z-index: 2; }
+
+  /* ========== HEADER ========== */
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px; flex-wrap: wrap; gap: 12px;
+    background: var(--bg-card); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md); padding: 12px 20px;
+    backdrop-filter: blur(4px);
+  }
+  .logo-area h1 {
+    font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700;
+    background: linear-gradient(135deg, #fff, var(--accent-cyan));
+    -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.3px;
+  }
+  .logo-area p { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+  .header-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .nav-pill {
+    background: transparent; border: 1px solid var(--border-subtle); border-radius: 40px;
+    padding: 6px 14px; font-size: 0.74rem; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+  }
+  .nav-pill:hover, .nav-pill.active {
+    background: rgba(59,130,246,0.2); border-color: var(--accent-blue); color: var(--accent-cyan);
+  }
+
+  .stress-badge {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 60px; padding: 5px 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .stress-badge.medium { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); }
+  .stress-badge.high { background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.3); }
+  .stress-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent-green); animation: pulse 1.8s infinite;
+  }
+  .stress-badge.medium .stress-dot { background: var(--accent-amber); }
+  .stress-badge.high .stress-dot { background: var(--accent-red); }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.2); } }
+  .stress-text { font-size: 0.73rem; font-weight: 500; }
+  .stress-value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem; margin-left: 2px; }
+
+  /* ========== QUICK STATS ROW ========== */
+  .quick-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px;
+  }
+  .stat-card {
+    background: var(--bg-card); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm); padding: 14px 16px; transition: all 0.2s;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .stat-card:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+  .stat-icon { font-size: 1.5rem; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(59,130,246,0.12); }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; }
+  .stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ========== CHARTS & CARDS ========== */
+  .chart-card, .wellness-card, .list-card {
+    background: var(--bg-card); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md); padding: 16px 20px;
+    backdrop-filter: blur(2px); transition: all 0.25s; box-shadow: var(--shadow-sm); margin-bottom: 16px;
+  }
+  .chart-card:hover, .wellness-card:hover { border-color: var(--border-glow); }
+  .chart-header, .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+    border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;
+  }
+  .chart-title, .card-title {
+    font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 600;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .chart-tabs { display: flex; gap: 4px; }
+  .tab {
+    background: transparent; border: 1px solid var(--border-subtle); padding: 3px 11px;
+    border-radius: 40px; font-size: 0.66rem; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  }
+  .tab.active { background: rgba(59, 130, 246, 0.2); border-color: var(--accent-blue); color: var(--accent-cyan); }
+
+  canvas { max-height: 250px; width: 100%; }
+
+  .two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  /* ========== EMPLOYEE GRID ========== */
+  .section-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 18px 0 12px 0;
+  }
+  .section-label h3 { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 600; }
+  .section-label span { font-size: 0.68rem; color: var(--text-muted); }
+
+  .employee-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
+  }
+  .employee-card {
+    background: var(--bg-card); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm); padding: 14px; transition: all 0.2s ease; cursor: pointer;
+  }
+  .employee-card:hover {
+    transform: translateY(-3px); border-color: var(--border-glow);
+    background: var(--bg-card-hover); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 12px; background: var(--gradient-blue);
+    display: flex; align-items: center; justify-content: center; font-weight: 700;
+    font-size: 0.9rem; font-family: 'Syne', sans-serif; box-shadow: 0 4px 10px rgba(59,130,246,0.2);
+  }
+  .stress-chip {
+    font-size: 0.63rem; font-weight: 600; padding: 2px 8px; border-radius: 40px;
+    background: rgba(16, 185, 129, 0.15); color: var(--accent-green);
+  }
+  .stress-chip.medium { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+  .stress-chip.high { background: rgba(244, 63, 94, 0.15); color: var(--accent-red); }
+  .employee-name { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; margin-bottom: 2px; }
+  .employee-role { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; }
+  .metrics { display: flex; gap: 10px; margin-top: 6px; border-top: 1px solid var(--border-subtle); padding-top: 6px; }
+  .metric { flex: 1; }
+  .metric .metric-val { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+  .metric .metric-lbl { font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ========== TABLE ========== */
+  .table-container { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.76rem; min-width: 1100px; }
+  th {
+    background: var(--bg-elevated); padding: 8px 10px; text-align: left; font-weight: 600;
+    color: var(--text-secondary); font-size: 0.66rem; text-transform: uppercase;
+    letter-spacing: 0.5px; border-bottom: 1px solid var(--border-subtle);
+    position: sticky; top: 0; z-index: 1;
+  }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
+  tr:hover td { background: rgba(59,130,246,0.03); }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.6rem; font-weight: 600;
+  }
+  .badge-active { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+  .badge-pending { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+  .badge-rejected { background: rgba(244,63,94,0.15); color: var(--accent-red); }
+  .badge-approved { background: rgba(59,130,246,0.15); color: var(--accent-cyan); }
+  .badge-onleave { background: rgba(236,72,153,0.15); color: var(--accent-pink); }
+  .badge-present { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+  .badge-absent { background: rgba(244,63,94,0.15); color: var(--accent-red); }
+  .badge-late { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+
+  /* ========== BUTTONS ========== */
+  .btn-sm {
+    padding: 3px 9px; border-radius: 30px; font-size: 0.62rem; font-weight: 600;
+    cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; transition: all 0.2s; margin: 1px;
+  }
+  .btn-approve { background: rgba(16,185,129,0.2); color: var(--accent-green); }
+  .btn-approve:hover { background: var(--accent-green); color: white; }
+  .btn-reject { background: rgba(244,63,94,0.2); color: var(--accent-red); }
+  .btn-reject:hover { background: var(--accent-red); color: white; }
+  .btn-view { background: rgba(59,130,246,0.2); color: var(--accent-cyan); }
+  .btn-view:hover { background: var(--accent-blue); color: white; }
+  .btn-resolve { background: rgba(16,185,129,0.2); color: var(--accent-green); }
+  .btn-resolve:hover { background: var(--accent-green); color: white; }
+  .btn-primary {
+    background: var(--gradient-blue); border: none; padding: 8px 16px;
+    border-radius: 40px; font-weight: 600; color: white; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.78rem; transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+
+  /* ========== MODAL ========== */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(5, 11, 24, 0.92);
+    backdrop-filter: blur(12px); z-index: 1000; display: none;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg-card); border: 1px solid var(--border-glow);
+    border-radius: 24px; width: 100%; max-width: 600px; max-height: 85vh;
+    overflow-y: auto; box-shadow: 0 30px 50px rgba(0, 0, 0, 0.5);
+    animation: modalFade 0.25s ease;
+  }
+  @keyframes modalFade { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  .modal-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+  .close-modal { background: none; border: none; font-size: 1.1rem; color: var(--text-muted); cursor: pointer; padding: 4px 8px; }
+  .modal-body { padding: 18px 20px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); }
+  .detail-label { color: var(--text-muted); font-size: 0.7rem; }
+  .detail-value { font-weight: 500; font-size: 0.78rem; }
+
+  /* ========== CHAT & INSIGHTS ========== */
+  .chat-container { display: flex; flex-direction: column; height: 350px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .message { display: flex; gap: 8px; animation: fadeSlide 0.25s ease; }
+  .message.user { flex-direction: row-reverse; }
+  .chat-avatar {
+    width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center;
+    justify-content: center; font-size: 0.8rem; flex-shrink: 0;
+  }
+  .chat-avatar.ai { background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(6,182,212,0.2)); color: var(--accent-cyan); }
+  .chat-avatar.user { background: linear-gradient(135deg, var(--accent-violet), #a855f7); color: white; }
+  .bubble {
+    max-width: 72%; padding: 8px 12px; border-radius: 14px; font-size: 0.75rem;
+    line-height: 1.4; color: var(--text-secondary);
+  }
+  .bubble.ai { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-bottom-left-radius: 4px; }
+  .bubble.user { background: var(--gradient-blue); color: white; border-bottom-right-radius: 4px; }
+  .input-area { padding: 10px 16px 14px; border-top: 1px solid var(--border-subtle); }
+  .input-wrapper {
+    display: flex; gap: 7px; background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+    border-radius: 60px; padding: 3px 5px 3px 14px; align-items: center;
+  }
+  .chat-input {
+    flex: 1; background: transparent; border: none; padding: 8px 0;
+    color: var(--text-primary); font-size: 0.75rem; outline: none; resize: none; font-family: 'DM Sans', sans-serif;
+  }
+  .send-btn {
+    background: var(--gradient-blue); border: none; width: 32px; height: 32px;
+    border-radius: 40px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;
+  }
+  .send-btn:hover { transform: scale(1.05); }
+  .suggestions { padding: 8px 16px; display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--border-subtle); }
+  .chip {
+    background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 40px;
+    padding: 3px 10px; font-size: 0.64rem; color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+  }
+  .chip:hover { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+  .insights-container {
+    padding: 6px 14px 14px; display: flex; flex-direction: column;
+    gap: 7px; max-height: 350px; overflow-y: auto;
+  }
+  .insight-card {
+    background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg); padding: 10px; transition: all 0.2s;
+  }
+  .insight-card:hover { border-color: var(--accent-blue); transform: translateX(3px); }
+  .insight-header { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+  .insight-title { font-weight: 600; font-size: 0.75rem; }
+  .insight-desc { font-size: 0.68rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 5px; }
+  .insight-meta { font-size: 0.58rem; color: var(--text-muted); display: flex; gap: 7px; }
+
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 4px; }
+
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 3px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; background: var(--bg-card-hover); border: 1px solid var(--border-subtle);
+    border-radius: 10px; padding: 8px 10px; color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif; font-size: 0.78rem; outline: none; transition: all 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent-blue); }
+
+  .highlight-red { color: var(--accent-red); font-weight: 600; }
+  .highlight-amber { color: var(--accent-amber); font-weight: 600; }
+  .complaint-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(244,63,94,0.2); border-radius: 20px;
+    padding: 2px 8px; font-size: 0.6rem; font-weight: 600; color: var(--accent-red);
+  }
+
+  @media (max-width: 1000px) {
+    body { padding: 12px; }
+    .two-col-grid, .three-col-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- ========== HEADER ========== -->
+  <div class="header">
+    <div class="logo-area">
+      <h1>⚡ WorkSphere HR</h1>
+      <p>manager command · wellbeing · analytics · leave desk</p>
+    </div>
+    <div class="header-right">
+      <a href="modulem.html" class="nav-pill">← Modules</a>
+      <button class="nav-pill active" data-view="dashboard">📊 Dashboard</button>
+      <button class="nav-pill" data-view="employees">👥 All Employees</button>
+      <button class="nav-pill" data-view="leaves">📅 Leave Desk</button>
+      <button class="nav-pill" data-view="complaints">🚨 Complaints</button>
+      <button class="nav-pill" data-view="wellbeing">🧠 Wellbeing AI</button>
+      <div class="stress-badge medium" id="managerStressBadge">
+        <div class="stress-dot"></div>
+        <span class="stress-text" id="managerStressLabel">My Stress</span>
+        <span class="stress-value" id="managerStressVal">52</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== QUICK STATS ========== -->
+  <div class="quick-stats" id="quickStats"></div>
+
+  <!-- ========== DASHBOARD VIEW ========== -->
+  <div id="view-dashboard" class="view-section">
+    <div class="two-col-grid">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title"><span>📊</span> My Combined Stress & Workload</div>
+          <div class="chart-tabs">
+            <div class="tab active" data-chart="manager" data-mode="combined">Combined</div>
+            <div class="tab" data-chart="manager" data-mode="stress">Stress Only</div>
+            <div class="tab" data-chart="manager" data-mode="workload">Workload Only</div>
+          </div>
+        </div>
+        <canvas id="managerChart" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title"><span>👥</span> Team Stress Overview</div>
+        </div>
+        <canvas id="teamStressChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="section-label"><h3>✨ Team Wellness Overview</h3><span id="teamCount"></span></div>
+    <div class="employee-grid" id="employeeGrid"></div>
+  </div>
+
+  <!-- ========== ALL EMPLOYEES VIEW ========== -->
+  <div id="view-employees" class="view-section" style="display:none;">
+    <div class="list-card">
+      <div class="card-header">
+        <div class="card-title"><span>👥</span> All Company Personnel</div>
+        <div style="display:flex; gap:8px;">
+          <select id="deptFilter" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:20px; padding:5px 12px; color:var(--text-secondary); font-size:0.68rem; font-family:'DM Sans',sans-serif;">
+            <option value="all">All Departments</option>
+            <option value="Engineering">Engineering</option><option value="Product">Product</option>
+            <option value="Design">Design</option><option value="HR">HR</option>
+            <option value="Operations">Operations</option><option value="Facilities">Facilities</option>
+            <option value="Finance">Finance</option>
+          </select>
+          <button class="btn-primary" onclick="addDummyEmployee()">+ Add Employee</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr><th>Employee</th><th>Role</th><th>Dept</th><th>Team</th><th>Status</th><th>Salary</th><th>Pending Tasks</th><th>Stress</th><th>Attendance</th><th>Complaints</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="allEmployeesTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== LEAVE DESK VIEW ========== -->
+  <div id="view-leaves" class="view-section" style="display:none;">
+    <div class="list-card">
+      <div class="card-header">
+        <div class="card-title"><span>📅</span> Leave Requests — Approve / Reject</div>
+        <div style="display:flex; gap:8px;">
+          <select id="leaveFilter" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:20px; padding:5px 12px; color:var(--text-secondary); font-size:0.68rem; font-family:'DM Sans',sans-serif;">
+            <option value="all">All</option><option value="pending">⏳ Pending</option><option value="approved">✓ Approved</option><option value="rejected">✕ Rejected</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th><th>Note</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="leaveRequestsTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== COMPLAINTS VIEW ========== -->
+  <div id="view-complaints" class="view-section" style="display:none;">
+    <div class="list-card">
+      <div class="card-header">
+        <div class="card-title"><span>🚨</span> Employee Complaints & Grievances</div>
+        <div style="display:flex; gap:8px;">
+          <select id="complaintFilter" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:20px; padding:5px 12px; color:var(--text-secondary); font-size:0.68rem; font-family:'DM Sans',sans-serif;">
+            <option value="all">All</option><option value="open">🔴 Open</option><option value="investigating">🟡 Investigating</option><option value="resolved">🟢 Resolved</option>
+          </select>
+          <button class="btn-primary" onclick="openNewComplaintModal()">+ File Complaint</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Employee</th><th>Type</th><th>Subject</th><th>Filed</th><th>Status</th><th>Severity</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="complaintsTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== WELLBEING AI VIEW ========== -->
+  <div id="view-wellbeing" class="view-section" style="display:none;">
+    <div class="two-col-grid">
+      <div class="wellness-card">
+        <div class="card-header">
+          <div class="card-title"><span>🤖</span> AI Health & Stress Assistant (HR)</div>
+          <button class="btn-sm btn-view" onclick="clearChat()">Clear</button>
+        </div>
+        <div class="suggestions">
+          <div class="chip" data-prompt="Show me team stress summary">📊 Team stress summary</div>
+          <div class="chip" data-prompt="Who needs immediate attention?">⚠️ Who needs attention?</div>
+          <div class="chip" data-prompt="How to reduce team burnout?">📉 Reduce burnout</div>
+          <div class="chip" data-prompt="Show me pending complaints">🚨 Pending complaints</div>
+        </div>
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages">
+            <div class="message ai">
+              <div class="chat-avatar ai">🤖</div>
+              <div class="bubble ai">Hello, HR Manager! I monitor team stress levels, complaints, and attendance. Currently tracking 24 employees — 3 need attention, 2 complaints open. Ask me anything!</div>
+            </div>
+          </div>
+          <div class="input-area">
+            <div class="input-wrapper">
+              <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask about team stress, complaints, or wellbeing..."></textarea>
+              <button class="send-btn" id="sendBtn">➤</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wellness-card">
+        <div class="card-header">
+          <div class="card-title"><span>✨</span> AI-Powered Insights (Manager View)</div>
+          <button class="btn-sm btn-view" onclick="refreshInsights()">⟳ Refresh</button>
+        </div>
+        <div class="insights-container" id="insightsList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EMPLOYEE DETAIL MODAL -->
+<div class="modal-overlay" id="employeeDetailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detailModalTitle">👤 Employee Profile</div>
+      <button class="close-modal" onclick="closeModal('employeeDetailModal')">✕</button>
+    </div>
+    <div class="modal-body" id="employeeDetailBody"></div>
+  </div>
+</div>
+
+<!-- NEW COMPLAINT MODAL -->
+<div class="modal-overlay" id="newComplaintModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🚨 File New Complaint</div>
+      <button class="close-modal" onclick="closeModal('newComplaintModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Employee</label><select id="complaintEmployee" style="width:100%; background:var(--bg-card-hover); border:1px solid var(--border-subtle); border-radius:10px; padding:8px; color:var(--text-primary); font-family:'DM Sans',sans-serif;"></select></div>
+      <div class="form-group"><label>Type</label><select id="complaintType" style="width:100%; background:var(--bg-card-hover); border:1px solid var(--border-subtle); border-radius:10px; padding:8px; color:var(--text-primary); font-family:'DM Sans',sans-serif;"><option>Workplace Harassment</option><option>Discrimination</option><option>Workload Grievance</option><option>Safety Concern</option><option>Interpersonal Conflict</option><option>Policy Violation</option><option>Other</option></select></div>
+      <div class="form-group"><label>Subject</label><input type="text" id="complaintSubject" placeholder="Brief subject..."></div>
+      <div class="form-group"><label>Description</label><textarea id="complaintDesc" rows="3" placeholder="Describe the issue..."></textarea></div>
+      <div class="form-group"><label>Severity</label><select id="complaintSeverity" style="width:100%; background:var(--bg-card-hover); border:1px solid var(--border-subtle); border-radius:10px; padding:8px; color:var(--text-primary); font-family:'DM Sans',sans-serif;"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div>
+      <button class="btn-primary" style="width:100%;" onclick="submitComplaint()">Submit Complaint →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== EXTENDED DATA STORE ====================
+const allEmployees = [
+  { id:1, initials:"AC", name:"Alex Chen", role:"Senior Developer", dept:"Engineering", team:"Platform", status:"active", tasks:7, pendingTasks:3, meetings:3.2, stress:72, salary:"$94,000", paidSalary:"$92,500", pendingSalary:"$1,500", joined:"Jan 2022", attendance:"present", attendancePct:96, achievements:["API Performance +32%","Mentor Award"], complaints:0 },
+  { id:2, initials:"SJ", name:"Sarah Johnson", role:"Tech Lead", dept:"Engineering", team:"Platform", status:"active", tasks:6, pendingTasks:2, meetings:5.8, stress:58, salary:"$112,000", paidSalary:"$112,000", pendingSalary:"$0", joined:"Mar 2021", attendance:"present", attendancePct:98, achievements:["AI Feature Patent","Leadership Excellence"], complaints:0 },
+  { id:3, initials:"MR", name:"Mike Rodriguez", role:"Frontend Architect", dept:"Engineering", team:"Frontend", status:"on_leave", tasks:5, pendingTasks:1, meetings:1.8, stress:42, salary:"$79,000", paidSalary:"$78,000", pendingSalary:"$1,000", joined:"Jun 2023", attendance:"on_leave", attendancePct:94, achievements:["Design System Lead"], complaints:0 },
+  { id:4, initials:"EW", name:"Emily Watson", role:"Backend Engineer", dept:"Engineering", team:"Platform", status:"active", tasks:8, pendingTasks:5, meetings:3.5, stress:85, salary:"$86,000", paidSalary:"$84,000", pendingSalary:"$2,000", joined:"Sep 2022", attendance:"present", attendancePct:91, achievements:["Zero-downtime deploy"], complaints:1 },
+  { id:5, initials:"DK", name:"David Kim", role:"DevOps Lead", dept:"Engineering", team:"Infra", status:"active", tasks:4, pendingTasks:0, meetings:4.2, stress:50, salary:"$93,000", paidSalary:"$93,000", pendingSalary:"$0", joined:"Nov 2021", attendance:"present", attendancePct:99, achievements:["99.99% uptime","Cloud Cost -24%"], complaints:0 },
+  { id:6, initials:"LW", name:"Lisa Wang", role:"QA Automation", dept:"Engineering", team:"QA", status:"active", tasks:5, pendingTasks:1, meetings:1.5, stress:38, salary:"$72,000", paidSalary:"$72,000", pendingSalary:"$0", joined:"Feb 2023", attendance:"present", attendancePct:97, achievements:["0 critical bugs Q1"], complaints:0 },
+  { id:7, initials:"RT", name:"Raj Thakur", role:"Junior Developer", dept:"Engineering", team:"Frontend", status:"active", tasks:9, pendingTasks:6, meetings:2.1, stress:90, salary:"$58,000", paidSalary:"$55,000", pendingSalary:"$3,000", joined:"Aug 2024", attendance:"late", attendancePct:85, achievements:["First feature shipped"], complaints:0 },
+  { id:8, initials:"PL", name:"Priya Lal", role:"Data Engineer", dept:"Engineering", team:"Data", status:"active", tasks:3, pendingTasks:0, meetings:4.8, stress:60, salary:"$88,000", paidSalary:"$88,000", pendingSalary:"$0", joined:"Apr 2022", attendance:"present", attendancePct:98, achievements:["Pipeline optimization"], complaints:0 },
+  { id:9, initials:"JM", name:"James Miller", role:"Product Manager", dept:"Product", team:"Core", status:"active", tasks:4, pendingTasks:2, meetings:6.5, stress:68, salary:"$95,000", paidSalary:"$94,000", pendingSalary:"$1,000", joined:"Jul 2022", attendance:"present", attendancePct:93, achievements:["Feature adoption +40%"], complaints:0 },
+  { id:10, initials:"AS", name:"Ana Silva", role:"Product Owner", dept:"Product", team:"Growth", status:"active", tasks:5, pendingTasks:1, meetings:5.2, stress:55, salary:"$82,000", paidSalary:"$82,000", pendingSalary:"$0", joined:"Oct 2023", attendance:"present", attendancePct:95, achievements:["User retention +28%"], complaints:0 },
+  { id:11, initials:"TC", name:"Tom Chen", role:"UX Designer", dept:"Design", team:"Design", status:"active", tasks:6, pendingTasks:2, meetings:3.0, stress:48, salary:"$76,000", paidSalary:"$76,000", pendingSalary:"$0", joined:"Mar 2023", attendance:"present", attendancePct:96, achievements:["Design system v2"], complaints:0 },
+  { id:12, initials:"MB", name:"Maria Blanco", role:"UI Designer", dept:"Design", team:"Design", status:"active", tasks:4, pendingTasks:0, meetings:2.5, stress:35, salary:"$68,000", paidSalary:"$68,000", pendingSalary:"$0", joined:"Jan 2024", attendance:"present", attendancePct:98, achievements:["Accessibility audit pass"], complaints:0 },
+  { id:13, initials:"RB", name:"Rachel Brown", role:"HR Manager", dept:"HR", team:"HR", status:"active", tasks:3, pendingTasks:0, meetings:7.2, stress:52, salary:"$78,000", paidSalary:"$78,000", pendingSalary:"$0", joined:"Jun 2020", attendance:"present", attendancePct:97, achievements:["Retention +12%"], complaints:0 },
+  { id:14, initials:"KP", name:"Kyle Peters", role:"HR Coordinator", dept:"HR", team:"HR", status:"active", tasks:2, pendingTasks:0, meetings:4.0, stress:30, salary:"$52,000", paidSalary:"$52,000", pendingSalary:"$0", joined:"Sep 2024", attendance:"present", attendancePct:99, achievements:["Onboarding revamp"], complaints:0 },
+  { id:15, initials:"GH", name:"George Harris", role:"Operations Lead", dept:"Operations", team:"Ops", status:"active", tasks:5, pendingTasks:3, meetings:5.5, stress:60, salary:"$71,000", paidSalary:"$70,000", pendingSalary:"$1,000", joined:"Feb 2021", attendance:"present", attendancePct:94, achievements:["Cost savings 18%"], complaints:0 },
+  { id:16, initials:"CL", name:"Carlos Lima", role:"Facilities Manager", dept:"Facilities", team:"Facilities", status:"active", tasks:3, pendingTasks:0, meetings:2.0, stress:25, salary:"$48,000", paidSalary:"$48,000", pendingSalary:"$0", joined:"Mar 2020", attendance:"present", attendancePct:98, achievements:["Office upgrade project"], complaints:0 },
+  { id:17, initials:"MD", name:"Marta Diaz", role:"Cleaner", dept:"Facilities", team:"Cleaning", status:"active", tasks:1, pendingTasks:0, meetings:0.2, stress:15, salary:"$28,000", paidSalary:"$27,500", pendingSalary:"$500", joined:"Apr 2019", attendance:"absent", attendancePct:88, achievements:["Perfect attendance"], complaints:2 },
+  { id:18, initials:"JS", name:"John Smith", role:"Cleaner", dept:"Facilities", team:"Cleaning", status:"active", tasks:1, pendingTasks:0, meetings:0.1, stress:12, salary:"$27,000", paidSalary:"$27,000", pendingSalary:"$0", joined:"Jul 2020", attendance:"present", attendancePct:95, achievements:["Employee recognition"], complaints:0 },
+  { id:19, initials:"PA", name:"Patricia Allen", role:"Receptionist", dept:"Operations", team:"Front Desk", status:"active", tasks:2, pendingTasks:0, meetings:1.0, stress:20, salary:"$35,000", paidSalary:"$35,000", pendingSalary:"$0", joined:"Nov 2022", attendance:"present", attendancePct:97, achievements:["Visitor system overhaul"], complaints:0 },
+  { id:20, initials:"BT", name:"Bob Thompson", role:"Security Guard", dept:"Facilities", team:"Security", status:"active", tasks:1, pendingTasks:0, meetings:0.3, stress:18, salary:"$32,000", paidSalary:"$32,000", pendingSalary:"$0", joined:"Aug 2021", attendance:"present", attendancePct:96, achievements:["Zero incidents 2025"], complaints:0 },
+  { id:21, initials:"NK", name:"Nina Kovac", role:"IT Support", dept:"Engineering", team:"IT", status:"active", tasks:4, pendingTasks:1, meetings:1.2, stress:40, salary:"$55,000", paidSalary:"$55,000", pendingSalary:"$0", joined:"Dec 2023", attendance:"present", attendancePct:94, achievements:["Ticket resolution -30%"], complaints:0 },
+  { id:22, initials:"OM", name:"Omar Mahmoud", role:"Data Analyst", dept:"Product", team:"Analytics", status:"active", tasks:5, pendingTasks:2, meetings:3.8, stress:65, salary:"$74,000", paidSalary:"$73,000", pendingSalary:"$1,000", joined:"May 2024", attendance:"late", attendancePct:90, achievements:["Dashboard adoption 95%"], complaints:0 },
+  { id:23, initials:"FG", name:"Fatima Gomes", role:"Accountant", dept:"Finance", team:"Accounting", status:"active", tasks:3, pendingTasks:0, meetings:2.5, stress:33, salary:"$62,000", paidSalary:"$62,000", pendingSalary:"$0", joined:"Feb 2025", attendance:"present", attendancePct:98, achievements:["Audit completed early"], complaints:0 },
+  { id:24, initials:"VP", name:"Viktor Petrov", role:"Security Lead", dept:"Facilities", team:"Security", status:"active", tasks:2, pendingTasks:0, meetings:1.8, stress:22, salary:"$38,000", paidSalary:"$38,000", pendingSalary:"$0", joined:"Mar 2024", attendance:"present", attendancePct:96, achievements:["New protocol implemented"], complaints:0 }
+];
+
+// Compute stress dynamically
+allEmployees.forEach(emp => {
+  emp.stress = Math.min(100, Math.max(5, Math.round(emp.tasks * 3.2 + emp.meetings * 5.5 + (emp.tasks > 7 ? 8 : 0) + (emp.pendingTasks * 3))));
+  if (emp.dept === "Facilities" && emp.role.includes("Cleaner")) emp.stress = Math.min(30, emp.stress);
+  if (emp.role.includes("Security")) emp.stress = Math.min(25, emp.stress);
+  if (emp.role.includes("Reception")) emp.stress = Math.min(35, emp.stress);
+});
+
+// Manager data
+const managerData = {
+  name: "Rachel Brown",
+  stressHistory: [48, 52, 55, 50, 58, 52, 49],
+  workloadHistory: [3, 4, 5, 4, 3, 5, 3],
+  meetingHistory: [6.5, 7.0, 7.2, 6.8, 7.5, 7.2, 6.9],
+  days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+};
+
+// Leave requests
+let leaveRequests = [
+  { id:101, employeeId:4, empName:"Emily Watson", type:"Wellness break", from:"2026-03-28", to:"2026-03-30", days:3, status:"pending", note:"Feeling burnout symptoms" },
+  { id:102, employeeId:7, empName:"Raj Thakur", type:"Annual leave", from:"2026-04-05", to:"2026-04-08", days:4, status:"pending", note:"Family function" },
+  { id:103, employeeId:13, empName:"Rachel Brown", type:"Sick leave", from:"2026-03-25", to:"2026-03-25", days:1, status:"approved", note:"Doctor appointment" },
+  { id:104, employeeId:2, empName:"Sarah Johnson", type:"Personal day", from:"2026-04-12", to:"2026-04-12", days:1, status:"pending", note:"Personal errand" },
+  { id:105, employeeId:5, empName:"David Kim", type:"Annual leave", from:"2026-04-15", to:"2026-04-20", days:6, status:"approved", note:"Vacation" },
+  { id:106, employeeId:9, empName:"James Miller", type:"Wellness break", from:"2026-03-29", to:"2026-03-31", days:3, status:"rejected", note:"Sprint deadline conflict" },
+  { id:107, employeeId:17, empName:"Marta Diaz", type:"Sick leave", from:"2026-04-01", to:"2026-04-01", days:1, status:"pending", note:"Medical checkup" }
+];
+let leaveIdCounter = 108;
+
+// Complaints
+let complaints = [
+  { id:201, employeeId:4, empName:"Emily Watson", type:"Workload Grievance", subject:"Excessive overtime without compensation", filed:"2026-03-15", status:"open", severity:"High", description:"Working 60+ hours weekly for 3 weeks straight without overtime pay." },
+  { id:202, employeeId:17, empName:"Marta Diaz", type:"Workplace Harassment", subject:"Verbal abuse from supervisor", filed:"2026-03-20", status:"investigating", severity:"Critical", description:"Supervisor using inappropriate language and threats." },
+  { id:203, employeeId:17, empName:"Marta Diaz", type:"Safety Concern", subject:"Cleaning chemical storage unsafe", filed:"2026-03-22", status:"open", severity:"Medium", description:"Hazardous cleaning supplies stored without proper ventilation." }
+];
+let complaintIdCounter = 204;
+let employeeIdCounter = 25;
+
+// ==================== VIEW NAVIGATION ====================
+document.querySelectorAll('.nav-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    const view = pill.getAttribute('data-view');
+    document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
+    document.getElementById('view-' + view).style.display = 'block';
+    if (view === 'employees') renderAllEmployees();
+    if (view === 'leaves') renderLeaveRequests();
+    if (view === 'complaints') renderComplaints();
+    if (view === 'wellbeing') { renderInsights(); }
+    if (view === 'dashboard') { renderDashboard(); }
+  });
+});
+
+// ==================== QUICK STATS ====================
+function renderQuickStats() {
+  const totalEmp = allEmployees.length;
+  const highRisk = allEmployees.filter(e => e.stress > 65).length;
+  const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
+  const openComplaints = complaints.filter(c => c.status !== 'resolved').length;
+  const absentToday = allEmployees.filter(e => e.attendance === 'absent' || e.attendance === 'on_leave').length;
+  const totalPendingSalary = allEmployees.reduce((s, e) => s + parseInt(e.pendingSalary.replace('$','').replace(',','')), 0);
+  
+  document.getElementById('quickStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">👥</div><div><div class="stat-value">${totalEmp}</div><div class="stat-label">Total Employees</div></div></div>
+    <div class="stat-card"><div class="stat-icon">⚠️</div><div><div class="stat-value highlight-red">${highRisk}</div><div class="stat-label">High Risk</div></div></div>
+    <div class="stat-card"><div class="stat-icon">📅</div><div><div class="stat-value highlight-amber">${pendingLeaves}</div><div class="stat-label">Pending Leaves</div></div></div>
+    <div class="stat-card"><div class="stat-icon">🚨</div><div><div class="stat-value highlight-red">${openComplaints}</div><div class="stat-label">Open Complaints</div></div></div>
+    <div class="stat-card"><div class="stat-icon">🏠</div><div><div class="stat-value">${absentToday}</div><div class="stat-label">Absent Today</div></div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div><div class="stat-value">$${totalPendingSalary.toLocaleString()}</div><div class="stat-label">Pending Salary</div></div></div>
+  `;
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  renderEmployeeGrid();
+  renderManagerChart('combined');
+  renderTeamStressChart();
+  updateManagerStressBadge();
+  renderQuickStats();
+  document.getElementById('teamCount').innerHTML = `${allEmployees.length} members · realtime stress index`;
+}
+
+function renderEmployeeGrid() {
+  const container = document.getElementById('employeeGrid');
+  container.innerHTML = allEmployees.map(emp => {
+    let stressClass = emp.stress <= 35 ? '' : emp.stress <= 65 ? 'medium' : 'high';
+    let stressText = emp.stress <= 35 ? 'Low' : emp.stress <= 65 ? 'Moderate' : 'High';
+    return `
+      <div class="employee-card" onclick="openEmployeeDetail(${emp.id})">
+        <div class="card-top">
+          <div class="avatar">${emp.initials}</div>
+          <div class="stress-chip ${stressClass}">${stressText} · ${emp.stress}</div>
+        </div>
+        <div class="employee-name">${emp.name}</div>
+        <div class="employee-role">${emp.role} · ${emp.dept} | ${emp.salary}</div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-val">${emp.tasks}</div><div class="metric-lbl">Tasks</div></div>
+          <div class="metric"><div class="metric-val">${emp.pendingTasks}</div><div class="metric-lbl">Pending</div></div>
+          <div class="metric"><div class="metric-val">${emp.attendancePct}%</div><div class="metric-lbl">Attend</div></div>
+          <div class="metric"><div class="metric-val">${emp.complaints > 0 ? '⚠️'+emp.complaints : '0'}</div><div class="metric-lbl">Complaints</div></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateManagerStressBadge() {
+  const val = managerData.stressHistory[managerData.stressHistory.length - 1];
+  document.getElementById('managerStressVal').innerText = val;
+  const badge = document.getElementById('managerStressBadge');
+  const label = document.getElementById('managerStressLabel');
+  badge.classList.remove('medium', 'high');
+  if (val <= 35) { label.innerText = 'My Stress (Low)'; }
+  else if (val <= 65) { badge.classList.add('medium'); label.innerText = 'My Stress (Moderate)'; }
+  else { badge.classList.add('high'); label.innerText = 'My Stress (High)'; }
+}
+
+// ==================== CHARTS ====================
+let managerChartInstance, teamStressChartInstance;
+
+function renderManagerChart(mode) {
+  const ctx = document.getElementById('managerChart').getContext('2d');
+  if (managerChartInstance) managerChartInstance.destroy();
+  
+  let datasets = [];
+  if (mode === 'combined' || mode === 'stress') {
+    datasets.push({
+      label: 'Stress Level',
+      data: managerData.stressHistory,
+      borderColor: '#f43f5e',
+      backgroundColor: 'rgba(244,63,94,0.05)',
+      borderWidth: 2.5, tension: 0.4, fill: true,
+      pointRadius: 4, pointBackgroundColor: '#f43f5e', pointBorderColor: '#0a1022', pointBorderWidth: 2,
+      yAxisID: 'y'
+    });
+  }
+  if (mode === 'combined' || mode === 'workload') {
+    datasets.push({
+      label: 'Active Tasks',
+      data: managerData.workloadHistory,
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59,130,246,0.05)',
+      borderWidth: 2.5, tension: 0.4, fill: true,
+      pointRadius: 4, pointBackgroundColor: '#3b82f6', pointBorderColor: '#0a1022', pointBorderWidth: 2,
+      yAxisID: 'y1'
+    });
+  }
+  
+  managerChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: managerData.days, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#8ba3c2', font: { size: 10, family: 'DM Sans' }, usePointStyle: true, boxWidth: 8 } } },
+      scales: {
+        x: { grid: { color: 'rgba(99,179,237,0.06)' }, ticks: { color: '#6a85a8', font: { size: 10 } } },
+        y: { type: 'linear', display: true, position: 'left', grid: { color: 'rgba(99,179,237,0.06)' }, ticks: { color: '#f43f5e', beginAtZero: true, max: 100 }, title: { display: true, text: 'Stress', color: '#f43f5e' } },
+        y1: { type: 'linear', display: mode === 'combined', position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#3b82f6', beginAtZero: true, max: 12 }, title: { display: true, text: 'Tasks', color: '#3b82f6' } }
+      }
+    }
+  });
+}
+
+function renderTeamStressChart() {
+  const ctx = document.getElementById('teamStressChart').getContext('2d');
+  if (teamStressChartInstance) teamStressChartInstance.destroy();
+  
+  const teams = ['Platform', 'Frontend', 'Infra', 'QA', 'Data', 'Core', 'Growth', 'Design', 'HR', 'Facilities', 'Finance', 'IT', 'Security', 'Cleaning'];
+  const avgStress = teams.map(t => {
+    const members = allEmployees.filter(e => e.team === t);
+    return members.length ? Math.round(members.reduce((s,e) => s + e.stress, 0) / members.length) : 0;
+  });
+  
+  teamStressChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: teams,
+      datasets: [{
+        label: 'Avg Stress',
+        data: avgStress,
+        backgroundColor: avgStress.map(v => v > 70 ? 'rgba(244,63,94,0.7)' : v > 50 ? 'rgba(245,158,11,0.7)' : 'rgba(16,185,129,0.7)'),
+        borderColor: avgStress.map(v => v > 70 ? '#f43f5e' : v > 50 ? '#f59e0b' : '#10b981'),
+        borderWidth: 1, borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: '#8ba3c2', font: { size: 10, family: 'DM Sans' } } } },
+      scales: {
+        x: { grid: { color: 'rgba(99,179,237,0.06)' }, ticks: { color: '#6a85a8', font: { size: 8 } } },
+        y: { grid: { color: 'rgba(99,179,237,0.06)' }, ticks: { color: '#6a85a8', beginAtZero: true, max: 100 } }
+      }
+    }
+  });
+}
+
+// Chart tab listeners
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('tab')) {
+    const parent = e.target.parentElement;
+    parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    e.target.classList.add('active');
+    const chart = e.target.getAttribute('data-chart');
+    const mode = e.target.getAttribute('data-mode');
+    if (chart === 'manager') renderManagerChart(mode);
+  }
+});
+
+// ==================== ALL EMPLOYEES TABLE ====================
+function renderAllEmployees(filterDept = 'all') {
+  const tbody = document.getElementById('allEmployeesTable');
+  let filtered = filterDept === 'all' ? allEmployees : allEmployees.filter(e => e.dept === filterDept);
+  tbody.innerHTML = filtered.map(emp => {
+    const stressClass = emp.stress > 65 ? 'high' : emp.stress > 35 ? 'medium' : '';
+    let statusBadge = '';
+    if (emp.status === 'on_leave') statusBadge = '<span class="badge badge-onleave">🌴 On Leave</span>';
+    else statusBadge = '<span class="badge badge-active">● Active</span>';
+    let attendanceBadge = '';
+    if (emp.attendance === 'present') attendanceBadge = '<span class="badge badge-present">✓ Present</span>';
+    else if (emp.attendance === 'absent') attendanceBadge = '<span class="badge badge-absent">✕ Absent</span>';
+    else if (emp.attendance === 'late') attendanceBadge = '<span class="badge badge-late">⏰ Late</span>';
+    else attendanceBadge = '<span class="badge badge-onleave">🌴 Leave</span>';
+    let complaintDisplay = emp.complaints > 0 ? `<span class="complaint-badge">🚨 ${emp.complaints}</span>` : '<span style="color:var(--accent-green);">✓ None</span>';
+    let salaryDisplay = `${emp.salary} <br><small style="color:var(--accent-green);">Paid: ${emp.paidSalary}</small>${emp.pendingSalary !== '$0' ? `<br><small class="highlight-amber">Pending: ${emp.pendingSalary}</small>` : ''}`;
+    
+    return `
+      <tr>
+        <td><strong>${emp.name}</strong><br><small style="color:var(--text-muted);">${emp.role}</small></td>
+        <td>${emp.role}</td>
+        <td>${emp.dept}</td>
+        <td>${emp.team}</td>
+        <td>${statusBadge}</td>
+        <td>${salaryDisplay}</td>
+        <td><span class="${emp.pendingTasks > 3 ? 'highlight-red' : emp.pendingTasks > 1 ? 'highlight-amber' : ''}">${emp.pendingTasks}</span></td>
+        <td><span class="stress-chip ${stressClass}" style="font-size:0.58rem;">${emp.stress}</span></td>
+        <td>${attendanceBadge}<br><small style="color:var(--text-muted);">${emp.attendancePct}%</small></td>
+        <td>${complaintDisplay}</td>
+        <td><button class="btn-sm btn-view" onclick="openEmployeeDetail(${emp.id})">View</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+document.getElementById('deptFilter').addEventListener('change', (e) => {
+  renderAllEmployees(e.target.value);
+});
+
+function addDummyEmployee() {
+  const names = ["Zara Khan", "Liam O'Brien", "Sofia Garcia", "Wei Zhang", "Amara Okafor"];
+  const roles = ["Intern", "Analyst", "Coordinator", "Specialist", "Assistant"];
+  const depts = ["Engineering", "Product", "HR", "Operations", "Finance"];
+  const teams = ["Platform", "Core", "HR", "Ops", "Accounting"];
+  const rand = Math.floor(Math.random() * 5);
+  const attendances = ['present', 'present', 'present', 'late', 'absent'];
+  const newEmp = {
+    id: employeeIdCounter++,
+    initials: names[rand].split(' ').map(n => n[0]).join(''),
+    name: names[rand],
+    role: roles[rand],
+    dept: depts[rand],
+    team: teams[rand],
+    status: "active",
+    tasks: Math.floor(Math.random() * 6) + 1,
+    pendingTasks: Math.floor(Math.random() * 4),
+    meetings: Math.round((Math.random() * 4 + 1) * 10) / 10,
+    stress: 0,
+    salary: "$" + (Math.floor(Math.random() * 40) + 30) + ",000",
+    paidSalary: "$" + (Math.floor(Math.random() * 40) + 28) + ",000",
+    pendingSalary: "$" + Math.floor(Math.random() * 3) + ",000",
+    joined: "Mar 2026",
+    attendance: attendances[Math.floor(Math.random() * 5)],
+    attendancePct: Math.floor(Math.random() * 20) + 80,
+    achievements: ["New hire - onboarding"],
+    complaints: 0
+  };
+  newEmp.stress = computeStress(newEmp);
+  allEmployees.push(newEmp);
+  renderAllEmployees(document.getElementById('deptFilter').value);
+  if (document.getElementById('view-dashboard').style.display !== 'none') renderDashboard();
+  renderQuickStats();
+  showToast(`✅ ${newEmp.name} added as ${newEmp.role}`);
+}
+
+function computeStress(emp) {
+  let raw = Math.round(emp.tasks * 3.2 + emp.meetings * 5.5 + (emp.tasks > 7 ? 8 : 0) + (emp.pendingTasks * 3));
+  if (emp.dept === "Facilities" && emp.role.includes("Cleaner")) raw = Math.min(30, raw);
+  if (emp.role.includes("Security")) raw = Math.min(25, raw);
+  if (emp.role.includes("Reception")) raw = Math.min(35, raw);
+  return Math.min(100, Math.max(5, raw));
+}
+
+// ==================== LEAVE REQUESTS ====================
+function renderLeaveRequests(filterStatus = 'all') {
+  const tbody = document.getElementById('leaveRequestsTable');
+  let filtered = filterStatus === 'all' ? leaveRequests : leaveRequests.filter(l => l.status === filterStatus);
+  tbody.innerHTML = filtered.map(lr => {
+    let statusBadge = '';
+    if (lr.status === 'pending') statusBadge = '<span class="badge badge-pending">⏳ Pending</span>';
+    else if (lr.status === 'approved') statusBadge = '<span class="badge badge-approved">✓ Approved</span>';
+    else statusBadge = '<span class="badge badge-rejected">✕ Rejected</span>';
+    let actions = lr.status === 'pending' ?
+      `<button class="btn-sm btn-approve" onclick="approveLeave(${lr.id})">✓ Approve</button>
+       <button class="btn-sm btn-reject" onclick="rejectLeave(${lr.id})">✕ Reject</button>` :
+      '<span style="font-size:0.62rem; color:var(--text-muted);">—</span>';
+    return `<tr><td>${lr.empName}</td><td>${lr.type}</td><td>${lr.from}</td><td>${lr.to}</td><td>${lr.days}</td><td>${statusBadge}</td><td><small>${lr.note}</small></td><td>${actions}</td></tr>`;
+  }).join('');
+}
+
+document.getElementById('leaveFilter').addEventListener('change', (e) => renderLeaveRequests(e.target.value));
+
+function approveLeave(id) {
+  const lr = leaveRequests.find(l => l.id === id);
+  if (lr) { lr.status = 'approved'; renderLeaveRequests(document.getElementById('leaveFilter').value); renderQuickStats(); showToast(`✅ Leave for ${lr.empName} approved`); }
+}
+function rejectLeave(id) {
+  const lr = leaveRequests.find(l => l.id === id);
+  if (lr) { lr.status = 'rejected'; renderLeaveRequests(document.getElementById('leaveFilter').value); renderQuickStats(); showToast(`❌ Leave for ${lr.empName} rejected`); }
+}
+
+// ==================== COMPLAINTS ====================
+function renderComplaints(filterStatus = 'all') {
+  const tbody = document.getElementById('complaintsTable');
+  let filtered = filterStatus === 'all' ? complaints : complaints.filter(c => c.status === filterStatus);
+  tbody.innerHTML = filtered.map(c => {
+    let statusBadge = '';
+    if (c.status === 'open') statusBadge = '<span class="badge badge-rejected">🔴 Open</span>';
+    else if (c.status === 'investigating') statusBadge = '<span class="badge badge-pending">🟡 Investigating</span>';
+    else statusBadge = '<span class="badge badge-approved">🟢 Resolved</span>';
+    let severityBadge = c.severity === 'Critical' ? '<span class="highlight-red">Critical</span>' : c.severity === 'High' ? '<span class="highlight-amber">High</span>' : c.severity;
+    let actions = c.status !== 'resolved' ?
+      `<button class="btn-sm btn-approve" onclick="resolveComplaint(${c.id})">✓ Resolve</button>
+       <button class="btn-sm btn-view" onclick="investigateComplaint(${c.id})">🔍 Investigate</button>` :
+      '<span style="font-size:0.62rem; color:var(--accent-green);">Resolved</span>';
+    return `<tr><td>#${c.id}</td><td>${c.empName}</td><td>${c.type}</td><td>${c.subject}</td><td>${c.filed}</td><td>${statusBadge}</td><td>${severityBadge}</td><td>${actions}</td></tr>`;
+  }).join('');
+}
+
+document.getElementById('complaintFilter').addEventListener('change', (e) => renderComplaints(e.target.value));
+
+function resolveComplaint(id) {
+  const c = complaints.find(co => co.id === id);
+  if (c) { c.status = 'resolved'; renderComplaints(document.getElementById('complaintFilter').value); renderQuickStats(); showToast(`✅ Complaint #${id} resolved`); }
+}
+function investigateComplaint(id) {
+  const c = complaints.find(co => co.id === id);
+  if (c) { c.status = 'investigating'; renderComplaints(document.getElementById('complaintFilter').value); renderQuickStats(); showToast(`🔍 Complaint #${id} under investigation`); }
+}
+
+function openNewComplaintModal() {
+  const select = document.getElementById('complaintEmployee');
+  select.innerHTML = allEmployees.map(e => `<option value="${e.id}">${e.name} - ${e.role}</option>`).join('');
+  document.getElementById('complaintSubject').value = '';
+  document.getElementById('complaintDesc').value = '';
+  document.getElementById('newComplaintModal').classList.add('open');
+}
+
+function submitComplaint() {
+  const empId = parseInt(document.getElementById('complaintEmployee').value);
+  const emp = allEmployees.find(e => e.id === empId);
+  const type = document.getElementById('complaintType').value;
+  const subject = document.getElementById('complaintSubject').value;
+  const desc = document.getElementById('complaintDesc').value;
+  const severity = document.getElementById('complaintSeverity').value;
+  if (!subject) { alert('Please enter a subject'); return; }
+  
+  complaints.push({
+    id: complaintIdCounter++,
+    employeeId: empId,
+    empName: emp.name,
+    type: type,
+    subject: subject,
+    filed: new Date().toISOString().split('T')[0],
+    status: 'open',
+    severity: severity,
+    description: desc
+  });
+  emp.complaints = (emp.complaints || 0) + 1;
+  closeModal('newComplaintModal');
+  renderComplaints(document.getElementById('complaintFilter').value);
+  renderAllEmployees(document.getElementById('deptFilter').value);
+  renderQuickStats();
+  showToast(`🚨 Complaint filed for ${emp.name}`);
+}
+
+// ==================== EMPLOYEE DETAIL ====================
+function openEmployeeDetail(id) {
+  const emp = allEmployees.find(e => e.id === id);
+  if (!emp) return;
+  const stressClass = emp.stress > 65 ? 'High' : emp.stress > 35 ? 'Moderate' : 'Low';
+  const empComplaints = complaints.filter(c => c.employeeId === emp.id);
+  document.getElementById('detailModalTitle').innerText = `👤 ${emp.name}`;
+  document.getElementById('employeeDetailBody').innerHTML = `
+    <div style="display:flex; gap:12px; align-items:center; margin-bottom:14px;">
+      <div class="avatar" style="width:44px; height:44px; font-size:1.1rem;">${emp.initials}</div>
+      <div>
+        <div style="font-family:'Syne'; font-size:1.1rem; font-weight:700;">${emp.name}</div>
+        <div style="color:var(--accent-cyan); font-size:0.74rem;">${emp.role} · ${emp.dept}</div>
+      </div>
+    </div>
+    <div class="detail-row"><span class="detail-label">Team</span><span class="detail-value">${emp.team}</span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${emp.status === 'on_leave' ? '🌴 On Leave' : '● Active'}</span></div>
+    <div class="detail-row"><span class="detail-label">Joined</span><span class="detail-value">${emp.joined}</span></div>
+    <div class="detail-row"><span class="detail-label">Salary</span><span class="detail-value">${emp.salary}</span></div>
+    <div class="detail-row"><span class="detail-label">Paid</span><span class="detail-value" style="color:var(--accent-green);">${emp.paidSalary}</span></div>
+    <div class="detail-row"><span class="detail-label">Pending Salary</span><span class="detail-value" style="color:${emp.pendingSalary!=='$0'?'var(--accent-amber)':'var(--accent-green)'};">${emp.pendingSalary}</span></div>
+    <div class="detail-row"><span class="detail-label">Active Tasks</span><span class="detail-value">${emp.tasks}</span></div>
+    <div class="detail-row"><span class="detail-label">Pending Tasks</span><span class="detail-value" style="color:${emp.pendingTasks>3?'var(--accent-red)':emp.pendingTasks>1?'var(--accent-amber)':'var(--accent-green)'};">${emp.pendingTasks}</span></div>
+    <div class="detail-row"><span class="detail-label">Weekly Meetings</span><span class="detail-value">${emp.meetings}h</span></div>
+    <div class="detail-row"><span class="detail-label">Stress Index</span><span class="detail-value" style="color:${emp.stress>65?'var(--accent-red)':emp.stress>35?'var(--accent-amber)':'var(--accent-green)'};">${emp.stress} (${stressClass})</span></div>
+    <div class="detail-row"><span class="detail-label">Attendance</span><span class="detail-value">${emp.attendance === 'present' ? '✓ Present' : emp.attendance === 'absent' ? '✕ Absent' : emp.attendance === 'late' ? '⏰ Late' : '🌴 Leave'} · ${emp.attendancePct}%</span></div>
+    <div class="detail-row"><span class="detail-label">Complaints</span><span class="detail-value">${emp.complaints > 0 ? `<span class="complaint-badge">🚨 ${emp.complaints} active</span>` : '✓ None'}</span></div>
+    ${empComplaints.length > 0 ? `<hr style="border-color:var(--border-subtle); margin:10px 0;"><div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:6px;">🚨 Complaint History:</div>${empComplaints.map(c => `<div style="font-size:0.65rem; padding:4px 0; border-bottom:1px solid var(--border-subtle);"><span style="color:${c.status==='open'?'var(--accent-red)':c.status==='investigating'?'var(--accent-amber)':'var(--accent-green)'};">●</span> ${c.subject} (${c.severity}) - ${c.status}</div>`).join('')}` : ''}
+    <hr style="border-color:var(--border-subtle); margin:10px 0;">
+    <div><span class="detail-label" style="display:block; margin-bottom:5px;">🏆 Achievements</span>${emp.achievements.map(a => `<span class="chip" style="margin:2px;">${a}</span>`).join('')}</div>
+    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:10px;">🔍 ${emp.stress > 65 ? '⚠️ Needs immediate attention — consider workload reduction or counseling.' : emp.stress > 35 ? 'Moderate load — monitor and encourage breaks.' : '✅ Great balance — maintain current rhythm.'}</div>
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button class="btn-primary" onclick="scheduleIntervention(${emp.id})">📋 Schedule 1-on-1</button>
+      <button class="btn-sm btn-view" onclick="closeModal('employeeDetailModal')">Close</button>
+    </div>
+  `;
+  document.getElementById('employeeDetailModal').classList.add('open');
+}
+
+function scheduleIntervention(id) {
+  const emp = allEmployees.find(e => e.id === id);
+  showToast(`📋 Intervention scheduled for ${emp.name}. Calendar invite sent.`);
+  closeModal('employeeDetailModal');
+}
+
+// ==================== WELLBEING AI ====================
+const wellbeingKnowledge = [
+  { title:"4-7-8 Breathing", content:"Inhale 4s, hold 7s, exhale 8s. Repeat 4 times. Reduces cortisol instantly." },
+  { title:"Meeting Fatigue Fix", content:"Limit meetings to 90min blocks. Use async updates. 32% stress reduction." },
+  { title:"Team Burnout Prevention", content:"Monitor workload. No employee >7 tasks. Microbreaks every 45min. Public recognition." },
+  { title:"High Stress Protocol", content:"Stress >70: immediate 1-on-1, reduce meetings, counseling, task redistribution." }
+];
+
+function getAIResponse(msg) {
+  const lower = msg.toLowerCase();
+  const highRisk = allEmployees.filter(e => e.stress > 65).sort((a,b) => b.stress - a.stress);
+  const openComplaints = complaints.filter(c => c.status !== 'resolved');
+  const pendingLeaves = leaveRequests.filter(l => l.status === 'pending');
+  
+  if (lower.includes('team stress') || lower.includes('summary')) return { text: `📊 **Team Summary:**\n• Total: ${allEmployees.length}\n• Avg Stress: ${Math.round(allEmployees.reduce((s,e)=>s+e.stress,0)/allEmployees.length)}\n• High Risk: ${highRisk.length}\n• Open Complaints: ${openComplaints.length}\n• Pending Leaves: ${pendingLeaves.length}\n• Absent Today: ${allEmployees.filter(e=>e.attendance==='absent'||e.attendance==='on_leave').length}` };
+  if (lower.includes('attention') || lower.includes('who need')) return { text: `⚠️ **Needs Attention:**\n${highRisk.map((e,i)=>`${i+1}. ${e.name} — Stress: ${e.stress} | Tasks: ${e.tasks} | Pending: ${e.pendingTasks}`).join('\n') || '✅ All clear!'}\n\nAlso: ${openComplaints.length} open complaints, ${allEmployees.filter(e=>e.attendance==='absent').length} absent today.` };
+  if (lower.includes('complaint')) return { text: `🚨 **Open Complaints (${openComplaints.length}):**\n${openComplaints.map(c=>`• #${c.id}: ${c.subject} (${c.severity}) — ${c.empName}`).join('\n') || '✅ No open complaints!'}` };
+  if (lower.includes('burnout') || lower.includes('reduce')) return { text: `📉 **Burnout Prevention:**\n${wellbeingKnowledge[2].content}\n\nCurrently: ${highRisk.length} at risk. Quick wins: redistribute tasks, implement no-meeting Wednesday.` };
+  if (lower.includes('breathe') || lower.includes('relax')) return { text: `🌬️ **4-7-8 Breathing:**\n${wellbeingKnowledge[0].content}\n\nShare this with stressed team members!` };
+  return { text: `I'm here to help! Currently monitoring ${allEmployees.length} employees. ${highRisk.length} need attention, ${openComplaints.length} complaints open. Ask about "team stress", "who needs attention", or "complaints".` };
+}
+
+function addChatMessage(role, text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  div.innerHTML = `<div class="chat-avatar ${role}">${role==='user'?'👤':'🤖'}</div><div class="bubble ${role}">${text.replace(/\n/g,'<br>')}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendUserMessage(msg) {
+  if (!msg.trim()) return;
+  addChatMessage('user', msg);
+  document.getElementById('chatInput').value = '';
+  setTimeout(() => { const r = getAIResponse(msg); addChatMessage('ai', r.text); }, 300);
+}
+
+function clearChat() {
+  document.getElementById('chatMessages').innerHTML = '<div class="message ai"><div class="chat-avatar ai">🤖</div><div class="bubble ai">Chat cleared. Ready to assist with team wellbeing, complaints, and stress management.</div></div>';
+}
+
+function renderInsights() {
+  const highRisk = allEmployees.filter(e => e.stress > 65);
+  const openComplaints = complaints.filter(c => c.status !== 'resolved');
+  const avgStress = Math.round(allEmployees.reduce((s,e) => s + e.stress, 0) / allEmployees.length);
+  const absentToday = allEmployees.filter(e => e.attendance === 'absent' || e.attendance === 'on_leave');
+  
+  const insights = [
+    { icon:"⚠️", title:`${highRisk.length} High-Risk Employees`, desc:highRisk.map(e=>e.name).join(', ') || 'None', severity:highRisk.length>2?"high":"med", action:"Review now" },
+    { icon:"📊", title:`Team Avg Stress: ${avgStress}`, desc:avgStress>55?"Above ideal. Consider wellness initiatives.":"Healthy range.", severity:avgStress>55?"med":"low", action:"Monitor" },
+    { icon:"🚨", title:`${openComplaints.length} Open Complaints`, desc:openComplaints.map(c=>`#${c.id}: ${c.subject}`).join(', ') || 'None', severity:openComplaints.length>1?"high":"med", action:"Investigate" },
+    { icon:"📅", title:`Pending Leaves: ${leaveRequests.filter(l=>l.status==='pending').length}`, desc:"Timely approval reduces anxiety.", severity:"med", action:"Review leaves" },
+    { icon:"🏠", title:`${absentToday.length} Absent Today`, desc:absentToday.map(e=>e.name).join(', ') || 'All present', severity:absentToday.length>3?"high":"low", action:"Check attendance" },
+    { icon:"🧘", title:"Manager Self-Care", desc:`Your stress: ${managerData.stressHistory[6]}. ${managerData.stressHistory[6]>55?'Take a wellness break.':'Managing well!'}`, severity:managerData.stressHistory[6]>55?"med":"low", action:"Self-check" }
+  ];
+  
+  document.getElementById('insightsList').innerHTML = insights.map(i => `
+    <div class="insight-card">
+      <div class="insight-header"><span>${i.icon}</span><span class="insight-title">${i.title}</span></div>
+      <div class="insight-desc">${i.desc}</div>
+      <div class="insight-meta"><span style="color:${i.severity==='high'?'var(--accent-red)':i.severity==='med'?'var(--accent-amber)':'var(--accent-green)'};">● ${i.severity}</span><span>💡 ${i.action}</span></div>
+    </div>
+  `).join('');
+}
+
+function refreshInsights() { renderInsights(); addChatMessage('ai', "📊 Insights refreshed."); }
+
+// ==================== UTILS ====================
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed; bottom:25px; right:25px; background:var(--bg-card); border:1px solid var(--border-glow); border-radius:40px; padding:10px 20px; color:var(--text-primary); font-size:0.78rem; z-index:9999; animation:fadeSlide 0.3s ease; box-shadow:0 8px 24px rgba(0,0,0,0.4);`;
+  toast.innerText = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+window.onclick = function(event) {
+  if (event.target.classList.contains('modal-overlay')) event.target.classList.remove('open');
+};
+
+// Chat listeners
+document.getElementById('sendBtn').addEventListener('click', () => sendUserMessage(document.getElementById('chatInput').value));
+document.getElementById('chatInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendUserMessage(e.target.value); }
+});
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => sendUserMessage(chip.getAttribute('data-prompt')));
+});
+
+// ==================== INIT ====================
+function init() {
+  renderDashboard();
+  renderAllEmployees();
+  renderLeaveRequests();
+  renderComplaints();
+  renderInsights();
+  renderQuickStats();
+}
+init();
+</script>
+</body>
+</html>

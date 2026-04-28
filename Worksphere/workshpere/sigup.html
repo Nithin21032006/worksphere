@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign up — WorkSphere</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0b0d14;
+    color: #e8eaf0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 5% 0%, rgba(79,142,247,0.11) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 95% 100%, rgba(167,139,250,0.09) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .card {
+    position: relative;
+    background: #111520;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 22px;
+    padding: 52px 48px;
+    width: 100%;
+    max-width: 420px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  /* Logo */
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin-bottom: 36px;
+  }
+
+  .logo-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #4f8ef7;
+    box-shadow: 0 0 12px #4f8ef7;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+
+  /* Headings */
+  .heading {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.025em;
+    margin-bottom: 6px;
+  }
+
+  .subheading {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 32px;
+  }
+
+  /* Fields */
+  .field { margin-bottom: 18px; }
+
+  .field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #c9ccd4;
+  }
+
+  input[type=text],
+  input[type=email],
+  input[type=password] {
+    width: 100%;
+    background: #0b0d14;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 15px;
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    color: #e8eaf0;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input::placeholder { color: rgba(107,114,128,0.6); }
+
+  input:focus {
+    border-color: #4f8ef7;
+    box-shadow: 0 0 0 3px rgba(79,142,247,0.14);
+  }
+
+  /* Buttons */
+  .btn-signup {
+    width: 100%;
+    background: #4f8ef7;
+    border: none;
+    color: #fff;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 24px rgba(79,142,247,0.28);
+    letter-spacing: 0.01em;
+    margin-top: 8px;
+  }
+
+  .btn-signup:hover {
+    background: #6a9ef9;
+    box-shadow: 0 0 36px rgba(79,142,247,0.48);
+    transform: translateY(-1px);
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0;
+    color: #374151;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+  }
+
+  .btn-google {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #e8eaf0;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn-google:hover {
+    background: #161b2e;
+    border-color: rgba(255,255,255,0.16);
+  }
+
+  .g-icon { width: 18px; height: 18px; }
+
+  .footer {
+    text-align: center;
+    margin-top: 26px;
+    font-size: 0.82rem;
+    color: #6b7280;
+  }
+
+  .footer a {
+    color: #4f8ef7;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .footer a:hover { text-decoration: underline; }
+
+  /* Back link */
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #6b7280;
+    font-size: 0.8rem;
+    text-decoration: none;
+    margin-bottom: 28px;
+    transition: color 0.2s;
+  }
+
+  .back:hover { color: #e8eaf0; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #161b2e;
+    border: 1px solid rgba(255,255,255,0.07);
+    color: #e8eaf0;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 40px 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <a href="index.html" class="back">← Back</a>
+
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <span class="logo-text">WorkSphere</span>
+  </div>
+
+  <h1 class="heading">Create account</h1>
+  <p class="subheading">Start your workspace journey</p>
+
+  <div class="field">
+    <label for="fullname">Full name</label>
+    <input type="text" id="fullname" placeholder="John Doe" autocomplete="name">
+  </div>
+
+  <div class="field">
+    <label for="email">Work email</label>
+    <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
+  </div>
+
+  <div class="field">
+    <label for="role">Account type</label>
+    <select id="role" style="width:100%; background:#0b0d14; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px 15px; color:#e8eaf0; font-family:'DM Sans', sans-serif; font-size:0.9rem; outline:none;">
+      <option value="">Select account type</option>
+      <option value="admin">Admin</option>
+      <option value="hr-manager">HR / Manager</option>
+      <option value="employee">Employee</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Create password" autocomplete="new-password">
+  </div>
+
+  <div class="field">
+    <label for="confirmPassword">Confirm password</label>
+    <input type="password" id="confirmPassword" placeholder="Confirm password" autocomplete="off">
+  </div>
+
+  <button class="btn-signup" onclick="handleSignup()">Create account →</button>
+
+  <div class="divider">or</div>
+
+  <button class="btn-google" onclick="toast('Google sign-up coming soon!')">
+    <svg class="g-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Continue with Google
+  </button>
+
+  <p class="footer">
+    Already have an account? 
+    <a href="login.html">Sign in</a>
+  </p>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+  function handleSignup() {
+    const fullname = document.getElementById('fullname').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const role = document.getElementById('role').value;
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirmPassword').value;
+
+    if (!fullname) { toast('Please enter your full name.'); return; }
+    if (!email) { toast('Please enter your work email.'); return; }
+    if (!role) { toast('Please select an account type.'); return; }
+    if (!password) { toast('Please create a password.'); return; }
+    if (password !== confirm) { toast('Passwords do not match.'); return; }
+    if (password.length < 6) { toast('Password must be at least 6 characters.'); return; }
+
+    // Simple email format check
+    const emailPattern = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+    if (!emailPattern.test(email)) { toast('Please enter a valid email address.'); return; }
+
+    // Simulate successful signup — redirect to module or dashboard
+    toast('Account created! Redirecting...');
+    setTimeout(() => {
+      window.location.href = "module.html";
+    }, 1200);
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toastEl');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>

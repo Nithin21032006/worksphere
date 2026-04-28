@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>WorkSphere Manager Suite | Complete Workforce Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0b0d14; --surface: #111520; --surface2: #161b2e;
+      --border: rgba(255,255,255,0.07);
+      --blue: #4f8ef7; --purple: #a78bfa; --green: #34d399;
+      --orange: #fb923c; --red: #f87171; --pink: #f472b6; --teal: #2dd4bf;
+      --text: #e8eaf0; --muted: #6b7280; --dim: #374151;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: radial-gradient(ellipse 65% 50% at 5% 0%, rgba(244,114,182,.07) 0%, transparent 55%);
+      pointer-events: none; z-index: 0;
+    }
+    .topbar {
+      position: relative; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      background: rgba(11,13,20,.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .tb-left { display: flex; align-items: center; gap: 14px; }
+    .back-btn { color: var(--muted); text-decoration: none; font-size: 0.8rem; cursor: pointer; }
+    .mod-badge { display: flex; align-items: center; gap: 9px; }
+    .mod-ico { width: 32px; height: 32px; border-radius: 10px; background: rgba(244,114,182,.12); border: 1px solid rgba(244,114,182,.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .mod-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; color: #fff; }
+    .mod-sub { font-size: 0.68rem; color: var(--muted); }
+    .tb-right { display: flex; align-items: center; gap: 12px; }
+    .btn-sm { background: var(--pink); border: none; color: white; padding: 5px 14px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+
+    .layout { flex: 1; display: flex; overflow: hidden; gap: 1px; background: var(--border); }
+    .left-panel { width: 32%; background: rgba(17,21,32,0.5); display: flex; flex-direction: column; overflow: hidden; }
+    .right-panel { flex: 1; background: rgba(17,21,32,0.5); display: flex; flex-direction: column; overflow: hidden; }
+
+    .panel-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .role-search { padding: 10px 14px; }
+    .role-search input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--text); }
+    .role-list { flex: 1; overflow-y: auto; }
+    .role-card { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.04); cursor: pointer; border-left: 3px solid transparent; }
+    .role-card.active { background: rgba(244,114,182,.08); border-left-color: var(--pink); }
+    .role-title { font-weight: 600; display: flex; justify-content: space-between; }
+
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 12px; background: rgba(0,0,0,0.2); overflow-x: auto; }
+    .tab { padding: 10px 14px; font-size: 0.7rem; font-weight: 600; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
+    .tab.active { color: var(--pink); border-bottom-color: var(--pink); }
+    .tab-content { flex: 1; overflow-y: auto; padding: 16px; display: none; flex-direction: column; gap: 16px; }
+    .tab-content.active { display: flex; }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; }
+    .metric-card { background: var(--surface); border-radius: 14px; padding: 14px; border: 1px solid var(--border); }
+    .metric-value { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--pink); }
+    .chart-container { background: var(--surface); border-radius: 14px; padding: 14px; }
+    canvas { max-height: 180px; width: 100%; }
+
+    .kanban-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+    .kstage { min-width: 180px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; }
+    .kstage-header { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+    .cand-card { background: var(--surface); border-radius: 10px; padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--purple); }
+    .cand-name { font-weight: 600; font-size: 0.8rem; display: flex; justify-content: space-between; }
+    .action-btns { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .action-btn { background: transparent; border: 1px solid var(--border); font-size: 0.6rem; padding: 3px 8px; border-radius: 6px; cursor: pointer; color: var(--muted); }
+    .action-btn.primary { background: var(--pink); color: white; border: none; }
+    .action-btn.interview { border-color: var(--teal); color: var(--teal); }
+
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+    .data-table th, .data-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    .badge { padding: 2px 6px; border-radius: 20px; font-size: 0.65rem; }
+    .badge.success { background: rgba(52,211,153,.15); color: var(--green); }
+    .badge.warning { background: rgba(251,146,60,.15); color: var(--orange); }
+    .risk-high { color: var(--red); font-weight: 600; }
+
+    .upload-zone { border: 1.5px dashed rgba(244,114,182,.25); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; background: rgba(244,114,182,.03); margin-bottom: 12px; }
+    .upload-zone:hover { border-color: var(--pink); background: rgba(244,114,182,.08); }
+
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 200; opacity: 0; pointer-events: none; transition: 0.2s; }
+    .overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: #111520; border: 1px solid var(--border); border-radius: 20px; padding: 24px; width: 90%; max-width: 450px; }
+    .modal input, .modal select, .modal textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px; margin-bottom: 12px; color: var(--text); }
+    .modal-actions { display: flex; gap: 12px; margin-top: 16px; }
+    .btn { flex: 1; padding: 8px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary { background: var(--pink); color: white; }
+    .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+    .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e2438; padding: 8px 20px; border-radius: 40px; font-size: 0.7rem; z-index: 300; backdrop-filter: blur(12px); opacity: 0; transition: 0.2s; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-left">
+    <div class="back-btn" onclick="history.back()">← Dashboard</div>
+    <div class="mod-badge"><div class="mod-ico">👔</div><div><div class="mod-name">Manager Suite</div><div class="mod-sub">Complete Workforce Intelligence</div></div></div>
+  </div>
+  <div class="tb-right">
+    <button class="btn-sm" onclick="openRoleModal()">+ New Role</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="left-panel">
+    <div class="panel-header"><span>📋 Open Roles</span><span id="roleCount">0</span></div>
+    <div class="role-search"><input type="text" id="roleSearch" placeholder="Search roles..." oninput="renderRoles()"></div>
+    <div class="role-list" id="roleList"></div>
+  </div>
+
+  <div class="right-panel">
+    <div class="tabs">
+      <div class="tab active" data-tab="pipeline" onclick="switchTab('pipeline')">📌 Pipeline</div>
+      <div class="tab" data-tab="interviews" onclick="switchTab('interviews')">🎙️ Interviews</div>
+      <div class="tab" data-tab="performance" onclick="switchTab('performance')">📈 Perf & Comp</div>
+      <div class="tab" data-tab="retention" onclick="switchTab('retention')">⚠️ Retention</div>
+      <div class="tab" data-tab="recommendation" onclick="switchTab('recommendation')">📄 Recommendation</div>
+      <div class="tab" data-tab="internships" onclick="switchTab('internships')">🎓 Interns → Hire</div>
+    </div>
+
+    <!-- TAB 1: PIPELINE -->
+    <div class="tab-content active" id="tab-pipeline">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="selectedRoleName" style="font-weight:700;">Select a role</span>
+        <button class="action-btn primary" onclick="openAddCandidateModal()">+ Candidate</button>
+      </div>
+      <div class="kanban-scroll" id="kanbanContainer"></div>
+    </div>
+
+    <!-- TAB 2: INTERVIEWS -->
+    <div class="tab-content" id="tab-interviews">
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-value" id="totalInterviews">0</div><div class="metric-label">Scheduled</div></div>
+        <div class="metric-card"><div class="metric-value" id="pendingFeedbacks">0</div><div class="metric-label">Pending Feedback</div></div>
+      </div>
+      <div class="chart-container"><canvas id="interviewChartCanvas"></canvas></div>
+      <button class="action-btn primary" style="align-self:flex-end;" onclick="openAssignInterviewModal()">+ Assign Interview</button>
+      <div id="interviewListDiv" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
+    <!-- TAB 3: PERFORMANCE & COMPENSATION -->
+    <div class="tab-content" id="tab-performance">
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-value" id="avgPerfValue">0</div><div class="metric-label">Avg Performance</div></div>
+        <div class="metric-card"><div class="metric-value" id="bonusPoolValue">$0</div><div class="metric-label">Bonus Pool</div></div>
+        <div class="metric-card"><div class="metric-value" id="promoReadyValue">0</div><div class="metric-label">Ready for Promotion</div></div>
+      </div>
+      <div class="chart-container"><canvas id="perfChartCanvas"></canvas></div>
+      <div class="chart-container"><canvas id="salaryChartCanvas"></canvas></div>
+      <table class="data-table" id="compTable"><thead><tr><th>Employee</th><th>Role</th><th>Salary</th><th>Performance</th><th>Bonus</th><th>Promotion</th><th>Action</th></tr></thead><tbody id="compTableBody"></tbody></table>
+      <div style="display:flex; gap:12px;"><button class="action-btn primary" onclick="processPromotions()">🎯 Process Promotions</button><button class="action-btn" style="background:var(--orange);color:white;" onclick="distributeBonuses()">💰 Distribute Bonuses</button></div>
+    </div>
+
+    <!-- TAB 4: RETENTION RISK -->
+    <div class="tab-content" id="tab-retention">
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-value" id="resignRateValue">0%</div><div class="metric-label">Projected Attrition</div></div>
+        <div class="metric-card"><div class="metric-value" id="highRiskCountValue">0</div><div class="metric-label">High Risk</div></div>
+        <div class="metric-card"><div class="metric-value" id="avgTenureValue">0</div><div class="metric-label">Avg Tenure (mo)</div></div>
+      </div>
+      <div class="chart-container"><canvas id="riskChartCanvas"></canvas></div>
+      <table class="data-table" id="riskTable"><thead><tr><th>Employee</th><th>Role</th><th>Risk</th><th>Factors</th><th>Action</th></tr></thead><tbody id="riskTableBody"></tbody></table>
+    </div>
+
+    <!-- TAB 5: RECOMMENDATION ANALYZER -->
+    <div class="tab-content" id="tab-recommendation">
+      <div class="upload-zone" onclick="document.getElementById('recFileInput').click()">📄 Upload Recommendation Letter (.txt)<input type="file" id="recFileInput" accept=".txt" style="display:none" onchange="analyzeRecommendationFile(this)"></div>
+      <div id="recResultCard" class="metric-card" style="display:none;"></div>
+      <div id="recHistoryDiv"><strong>📋 Recent Analyses</strong></div>
+    </div>
+
+    <!-- TAB 6: INTERNSHIPS -->
+    <div class="tab-content" id="tab-internships">
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-value" id="internActiveCount">0</div><div class="metric-label">Active Interns</div></div>
+        <div class="metric-card"><div class="metric-value" id="convRateValue">0%</div><div class="metric-label">Conversion Rate</div></div>
+        <div class="metric-card"><div class="metric-value" id="joinedCountValue">0</div><div class="metric-label">Joined Full-Time</div></div>
+      </div>
+      <div class="chart-container"><canvas id="internChartCanvas"></canvas></div>
+      <button class="action-btn primary" style="align-self:flex-end;" onclick="openAddInternModal()">+ Add Intern</button>
+      <table class="data-table" id="internTable"><thead><tr><th>Name</th><th>University</th><th>Performance</th><th>Offer</th><th>Joined</th><th>Action</th></tr></thead><tbody id="internTableBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="candidateModal" class="overlay" onclick="if(event.target===this)closeModal('candidateModal')"><div class="modal"><div class="modal-title">➕ Add Candidate</div><input id="candName" placeholder="Full Name"><input id="candEmail" placeholder="Email"><select id="candStage"><option>Applied</option><option>Screened</option><option>Interviewed</option><option>Offered</option></select><input id="candFit" placeholder="Fit Score (1-10)" type="number"><div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('candidateModal')">Cancel</button><button class="btn btn-primary" onclick="addCandidate()">Add</button></div></div></div>
+
+<div id="interviewModal" class="overlay" onclick="if(event.target===this)closeModal('interviewModal')"><div class="modal"><div class="modal-title">🎙️ Assign Interview</div><select id="interviewCandidateSelect"></select><select id="interviewerSelect"><option>Ravi K. (Engineering)</option><option>Meera S. (Design)</option><option>Arjun M. (Manager)</option></select><input type="datetime-local" id="interviewTimeInput"><select id="interviewTypeSelect"><option>Technical</option><option>HR</option><option>System Design</option></select><div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('interviewModal')">Cancel</button><button class="btn btn-primary" onclick="assignInterview()">Schedule</button></div></div></div>
+
+<div id="roleModal" class="overlay" onclick="if(event.target===this)closeModal('roleModal')"><div class="modal"><div class="modal-title">📌 New Role</div><input id="roleTitleInput" placeholder="Title"><input id="roleDeptInput" placeholder="Department"><div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('roleModal')">Cancel</button><button class="btn btn-primary" onclick="createRole()">Create</button></div></div></div>
+
+<div id="internModal" class="overlay" onclick="if(event.target===this)closeModal('internModal')"><div class="modal"><div class="modal-title">🎓 Add Intern</div><input id="internNameInput" placeholder="Full Name"><input id="internUnivInput" placeholder="University"><select id="internPerfSelect"><option>Excellent</option><option>Good</option><option>Average</option></select><div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('internModal')">Cancel</button><button class="btn btn-primary" onclick="addIntern()">Add</button></div></div></div>
+
+<script>
+  // ========== DATA ==========
+  let roles = [
+    { id: 1, title: "Senior Backend Engineer", dept: "Engineering", status: "open", createdAt: "2026-04-01" },
+    { id: 2, title: "Product Designer", dept: "Design", status: "open", createdAt: "2026-04-10" },
+  ];
+  let nextRoleId = 3;
+
+  let candidates = [
+    { id: 1, name: "Ananya Sharma", email: "ananya@mail.com", roleId: 1, stage: "Screened", fit: 8, appliedAt: "2026-04-15" },
+    { id: 2, name: "Rahul Mehta", email: "rahul@mail.com", roleId: 1, stage: "Interviewed", fit: 9, appliedAt: "2026-04-10" },
+    { id: 3, name: "Priya Verma", email: "priya@mail.com", roleId: 1, stage: "Applied", fit: 6, appliedAt: "2026-04-22" },
+  ];
+  let nextCandidateId = 4;
+  const stages = ["Applied", "Screened", "Interviewed", "Offered", "Hired"];
+
+  let interviews = [
+    { id: 1, candidateId: 2, candidateName: "Rahul Mehta", interviewer: "Ravi K. (Engineering)", time: "2026-04-28T10:00", type: "Technical", feedback: null },
+  ];
+  let nextInterviewId = 3;
+
+  let employees = [
+    { id: 101, name: "John Doe", role: "Senior Backend Engineer", salary: 145000, performanceScore: 4.2, lastBonus: 5000, tenureMonths: 48 },
+    { id: 102, name: "Jane Smith", role: "Product Designer", salary: 120000, performanceScore: 4.8, lastBonus: 8000, tenureMonths: 18 },
+    { id: 103, name: "Mike Chen", role: "DevOps Lead", salary: 155000, performanceScore: 4.5, lastBonus: 6000, tenureMonths: 36 },
+  ];
+
+  let recHistory = [];
+  let interns = [
+    { id: 1, name: "Riya Patel", university: "IIT Bombay", performance: "Excellent", offerSent: true, joined: true },
+    { id: 2, name: "Kunal Sharma", university: "BITS Pilani", performance: "Good", offerSent: true, joined: false },
+    { id: 3, name: "Neha Gupta", university: "NIT Trichy", performance: "Average", offerSent: false, joined: false },
+  ];
+  let nextInternId = 4;
+  let selectedRoleId = 1;
+  let charts = {};
+
+  function showToast(msg) { let t = document.getElementById("toastMsg"); if(!t){ t=document.createElement("div"); t.id="toastMsg"; t.className="toast-msg"; document.body.appendChild(t); } t.textContent=msg; t.style.opacity="1"; setTimeout(()=> t.style.opacity="0", 2500); }
+  function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+  // ROLES
+  function renderRoles() {
+    const search = document.getElementById("roleSearch").value.toLowerCase();
+    const filtered = roles.filter(r => r.status === "open" && (r.title.toLowerCase().includes(search) || r.dept.toLowerCase().includes(search)));
+    document.getElementById("roleCount").innerHTML = `${filtered.length} open`;
+    document.getElementById("roleList").innerHTML = filtered.map(r => `<div class="role-card ${selectedRoleId === r.id ? 'active' : ''}" onclick="selectRole(${r.id})"><div class="role-title"><span>${r.title}</span><span>${r.dept}</span></div></div>`).join('');
+  }
+  function selectRole(id) { selectedRoleId = id; renderRoles(); renderPipeline(); }
+  function createRole() { const title = document.getElementById("roleTitleInput").value.trim(); if(!title) return; roles.push({ id: nextRoleId++, title, dept: document.getElementById("roleDeptInput").value || "General", status: "open", createdAt: new Date().toISOString().split('T')[0] }); closeModal("roleModal"); renderRoles(); showToast(`Role "${title}" created`); }
+  function openRoleModal() { document.getElementById("roleModal").classList.add("open"); }
+
+  // PIPELINE
+  function renderPipeline() {
+    const role = roles.find(r => r.id === selectedRoleId);
+    if (!role) { document.getElementById("kanbanContainer").innerHTML = "<div style='padding:20px;'>Select a role</div>"; return; }
+    document.getElementById("selectedRoleName").innerText = role.title;
+    const roleCands = candidates.filter(c => c.roleId === selectedRoleId);
+    const kanban = stages.map(stage => {
+      const stageCands = roleCands.filter(c => c.stage === stage);
+      return `<div class="kstage"><div class="kstage-header"><span>${stage}</span><span>${stageCands.length}</span></div>
+        <div>${stageCands.map(c => `<div class="cand-card"><div class="cand-name"><span>${c.name}</span><span>${c.fit}/10</span></div>
+          <div class="action-btns"><button class="action-btn" onclick="moveCandidate(${c.id})">→ Next</button>
+          <button class="action-btn interview" onclick="quickAssignInterview(${c.id},'${c.name}')">🎙️ Interview</button></div></div>`).join('') || '<div style="padding:8px;color:var(--dim);text-align:center;">Empty</div>'}</div></div>`;
+    }).join('');
+    document.getElementById("kanbanContainer").innerHTML = kanban;
+  }
+  function moveCandidate(candId) { const c = candidates.find(c=>c.id===candId); if(c){ const idx = stages.indexOf(c.stage); if(idx < stages.length-1) { c.stage = stages[idx+1]; renderPipeline(); showToast(`${c.name} → ${c.stage}`); } } }
+  function addCandidate() { const name = document.getElementById("candName").value.trim(); if(!name) return; candidates.push({ id: nextCandidateId++, name, email: document.getElementById("candEmail").value, roleId: selectedRoleId, stage: document.getElementById("candStage").value, fit: parseInt(document.getElementById("candFit").value)||5, appliedAt: new Date().toISOString().split('T')[0] }); closeModal("candidateModal"); renderPipeline(); showToast(`${name} added`); }
+  function openAddCandidateModal() { document.getElementById("candidateModal").classList.add("open"); }
+
+  // INTERVIEWS
+  function renderInterviews() {
+    document.getElementById("totalInterviews").innerText = interviews.length;
+    document.getElementById("pendingFeedbacks").innerText = interviews.filter(i=>!i.feedback).length;
+    const ctx = document.getElementById("interviewChartCanvas")?.getContext("2d");
+    if(charts.interview) charts.interview.destroy();
+    charts.interview = new Chart(ctx, { type: 'bar', data: { labels: ['Scheduled', 'Completed'], datasets: [{ data: [interviews.filter(i=>!i.feedback).length, interviews.filter(i=>i.feedback).length], backgroundColor: ['#f472b6', '#34d399'] }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+    document.getElementById("interviewListDiv").innerHTML = interviews.map(i => `<div class="metric-card"><strong>${i.candidateName}</strong> with ${i.interviewer}<br>${i.type} | ${new Date(i.time).toLocaleString()}<br>${i.feedback ? `<span style="color:var(--green);">✓ Feedback: ${i.feedback}</span>` : `<button class="action-btn" style="margin-top:6px;" onclick="submitFeedback(${i.id})">✍️ Add Feedback</button>`}</div>`).join('');
+  }
+  function openAssignInterviewModal() {
+    const roleCands = candidates.filter(c => c.roleId === selectedRoleId && c.stage !== "Hired");
+    const select = document.getElementById("interviewCandidateSelect");
+    select.innerHTML = roleCands.map(c => `<option value="${c.id}">${c.name} (${c.stage})</option>`).join('');
+    document.getElementById("interviewModal").classList.add("open");
+  }
+  function quickAssignInterview(candId, name) {
+    const select = document.getElementById("interviewCandidateSelect");
+    select.innerHTML = `<option value="${candId}">${name}</option>`;
+    document.getElementById("interviewModal").classList.add("open");
+  }
+  function assignInterview() {
+    const candId = parseInt(document.getElementById("interviewCandidateSelect").value);
+    const cand = candidates.find(c=>c.id===candId);
+    const time = document.getElementById("interviewTimeInput").value;
+    if(!time) { showToast("Select interview time"); return; }
+    interviews.push({ id: nextInterviewId++, candidateId: candId, candidateName: cand.name, interviewer: document.getElementById("interviewerSelect").value, time: time, type: document.getElementById("interviewTypeSelect").value, feedback: null });
+    closeModal("interviewModal"); renderInterviews(); showToast("Interview scheduled");
+  }
+  function submitFeedback(id) { const fb = prompt("Enter interview feedback (rating/comments):"); if(fb) { const i = interviews.find(i=>i.id===id); if(i) { i.feedback = fb; renderInterviews(); showToast("Feedback saved"); } } }
+
+  // PERFORMANCE & COMP
+  function renderPerformance() {
+    const avg = (employees.reduce((s,e)=>s+e.performanceScore,0)/employees.length).toFixed(1);
+    const bonusPool = employees.reduce((s,e)=>s + (e.performanceScore>=4.2?3000:1000),0);
+    const promoReady = employees.filter(e=>e.performanceScore>=4.5).length;
+    document.getElementById("avgPerfValue").innerText = avg; document.getElementById("bonusPoolValue").innerText = `$${bonusPool}`; document.getElementById("promoReadyValue").innerText = promoReady;
+    if(charts.perf) charts.perf.destroy();
+    charts.perf = new Chart(document.getElementById("perfChartCanvas"), { type: 'bar', data: { labels: employees.map(e=>e.name.split(' ')[0]), datasets: [{ label: 'Performance (1-5)', data: employees.map(e=>e.performanceScore), backgroundColor: '#a78bfa' }] }, options: { responsive: true, scales: { y: { max: 5 } } } });
+    if(charts.salary) charts.salary.destroy();
+    charts.salary = new Chart(document.getElementById("salaryChartCanvas"), { type: 'line', data: { labels: employees.map(e=>e.name.split(' ')[0]), datasets: [{ label: 'Salary ($K)', data: employees.map(e=>e.salary/1000), borderColor: '#f472b6' }] }, options: { responsive: true } });
+    document.getElementById("compTableBody").innerHTML = employees.map(e => `<tr><td>${e.name}</td><td>${e.role}</td><td>$${e.salary.toLocaleString()}</td><td>${e.performanceScore}/5</td><td>$${e.lastBonus}</td><td>${e.performanceScore>=4.5?'<span class="badge success">Ready</span>':'—'}</td><td><button class="action-btn" onclick="adjustSalary(${e.id})">💰 Adjust</button></td></tr>`).join('');
+  }
+  function adjustSalary(id) { const e = employees.find(e=>e.id===id); const newSal = prompt("Enter new annual salary:", e.salary); if(newSal && !isNaN(newSal)) { e.salary = parseInt(newSal); renderPerformance(); showToast(`${e.name} salary updated`); } }
+  function processPromotions() { employees.forEach(e => { if(e.performanceScore>=4.5) { e.salary = Math.round(e.salary*1.12); e.performanceScore = Math.min(5, e.performanceScore+0.2); showToast(`${e.name} promoted! +12% raise`); } }); renderPerformance(); }
+  function distributeBonuses() { employees.forEach(e => { e.lastBonus = e.performanceScore>=4.5?5000:e.performanceScore>=4.0?3000:1000; }); renderPerformance(); showToast("Bonuses distributed!"); }
+
+  // RETENTION
+  function renderRetention() {
+    const highRisk = employees.filter(e=>e.tenureMonths>30 && e.performanceScore<4.0).length;
+    const rate = employees.length ? ((highRisk/employees.length)*25).toFixed(1) : "0";
+    document.getElementById("resignRateValue").innerText = `${rate}%`; document.getElementById("highRiskCountValue").innerText = highRisk; document.getElementById("avgTenureValue").innerText = (employees.reduce((s,e)=>s+e.tenureMonths,0)/employees.length).toFixed(0);
+    if(charts.risk) charts.risk.destroy();
+    charts.risk = new Chart(document.getElementById("riskChartCanvas"), { type: 'doughnut', data: { labels: ['High Risk', 'Medium/Low'], datasets: [{ data: [highRisk, employees.length-highRisk], backgroundColor: ['#f87171', '#34d399'] }] }, options: { responsive: true } });
+    document.getElementById("riskTableBody").innerHTML = employees.map(e => `<tr><td>${e.name}</td><td>${e.role}</td><td class="${e.tenureMonths>30 && e.performanceScore<4.0?'risk-high':''}">${e.tenureMonths>30 && e.performanceScore<4.0?'High':'Low'}</td><td>Tenure: ${e.tenureMonths}mo, Perf: ${e.performanceScore}/5</td><td><button class="action-btn" onclick="showToast('Retention plan created for ${e.name}')">✉️ Engage</button></td></tr>`).join('');
+  }
+
+  // RECOMMENDATION
+  function analyzeRecommendationFile(input) {
+    const file = input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const text = e.target.result.toLowerCase();
+      let score = 65;
+      if(text.includes("excellent") || text.includes("outstanding")) score += 15;
+      if(text.includes("leadership")) score += 8;
+      if(text.includes("highly recommend")) score += 12;
+      if(text.includes("team player")) score += 5;
+      score = Math.min(98, Math.max(35, score));
+      const name = file.name.replace(/\.[^/.]+$/, "");
+      recHistory.unshift({ name, score, date: new Date().toISOString().split('T')[0] });
+      document.getElementById("recResultCard").style.display = "block";
+      document.getElementById("recResultCard").innerHTML = `<strong>📝 ${name}</strong><br>Recommendation Score: <span style="font-size:1.4rem;font-weight:800;color:var(--pink);">${score}%</span><br>${score>=80?"Strong candidate - highly recommended.":score>=60?"Moderate - consider additional interviews.":"Weak recommendation - proceed with caution."}`;
+      document.getElementById("recHistoryDiv").innerHTML = `<strong>📋 Recent Analyses</strong><br>` + recHistory.slice(0,3).map(r => `<div class="metric-card" style="margin-top:6px;">${r.name} — ${r.score}% (${r.date})</div>`).join('');
+    };
+    reader.readAsText(file);
+  }
+
+  // INTERNSHIPS
+  function renderInternships() {
+    const active = interns.filter(i=>!i.joined && !i.offerSent).length;
+    const converted = interns.filter(i=>i.joined).length;
+    const totalOffers = interns.filter(i=>i.offerSent).length;
+    const rate = totalOffers ? Math.round((converted/totalOffers)*100) : 0;
+    document.getElementById("internActiveCount").innerText = active; document.getElementById("convRateValue").innerText = `${rate}%`; document.getElementById("joinedCountValue").innerText = converted;
+    if(charts.intern) charts.intern.destroy();
+    charts.intern = new Chart(document.getElementById("internChartCanvas"), { type: 'bar', data: { labels: ['Offers Sent', 'Joined'], datasets: [{ data: [totalOffers, converted], backgroundColor: ['#a78bfa', '#34d399'] }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+    document.getElementById("internTableBody").innerHTML = interns.map(i => `<tr><td>${i.name}</td><td>${i.university}</td><td class="badge ${i.performance==='Excellent'?'success':'warning'}">${i.performance}</td><td>${i.offerSent?'✓ Sent':'—'}</td><td>${i.joined?'✓ Joined':'—'}</td><td>${!i.offerSent?`<button class="action-btn" onclick="sendOffer(${i.id})">📧 Offer</button>`:(i.offerSent && !i.joined?`<button class="action-btn primary" onclick="markJoined(${i.id})">✅ Mark Joined</button>`:'—')}</td></tr>`).join('');
+  }
+  function sendOffer(id) { const i = interns.find(i=>i.id===id); if(i) { i.offerSent = true; renderInternships(); showToast(`Offer sent to ${i.name}`); } }
+  function markJoined(id) { const i = interns.find(i=>i.id===id); if(i) { i.joined = true; employees.push({ id: 200+id, name: i.name, role: "Associate Engineer", salary: 85000, performanceScore: 3.5, lastBonus: 0, tenureMonths: 0 }); renderInternships(); renderPerformance(); renderRetention(); showToast(`${i.name} joined as full-time employee!`); } }
+  function addIntern() { const name = document.getElementById("internNameInput").value.trim(); if(!name) return; interns.push({ id: nextInternId++, name, university: document.getElementById("internUnivInput").value, performance: document.getElementById("internPerfSelect").value, offerSent: false, joined: false }); closeModal("internModal"); renderInternships(); showToast(`Intern ${name} added`); }
+  function openAddInternModal() { document.getElementById("internModal").classList.add("open"); }
+
+  // TAB SWITCHING
+  function switchTab(tab) {
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+    document.querySelector(`.tab[data-tab="${tab}"]`).classList.add("active");
+    document.getElementById(`tab-${tab}`).classList.add("active");
+    if(tab === "interviews") renderInterviews();
+    if(tab === "performance") renderPerformance();
+    if(tab === "retention") renderRetention();
+    if(tab === "internships") renderInternships();
+  }
+
+  // INITIALIZE
+  renderRoles();
+  selectRole(1);
+  renderInterviews();
+  renderPerformance();
+  renderRetention();
+  renderInternships();
+</script>
+</body>
+</html>

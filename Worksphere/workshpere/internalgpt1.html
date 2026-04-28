@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkSphere Assistant — WorkSphere AI with Reminders</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0b0d14;
+      --surface: #111520;
+      --surface2: #161b2e;
+      --border: rgba(255, 255, 255, 0.07);
+      --accent: #a78bfa;
+      --blue: #4f8ef7;
+      --green: #34d399;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --dim: #374151;
+      --red: #f87171;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 0% 0%, rgba(167, 139, 250, 0.09) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 100% 100%, rgba(79, 142, 247, 0.07) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 56px;
+      background: rgba(11, 13, 20, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tb-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .back-btn:hover {
+      color: var(--text);
+    }
+
+    .vdiv {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+    }
+
+    .mod-badge {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .mod-ico {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: rgba(167, 139, 250, 0.12);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .mod-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #fff;
+    }
+
+    .mod-sub {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    .tb-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .email-summarizer-btn {
+      padding: 6px 14px;
+      border-radius: 9px;
+      border: 1px solid rgba(167, 139, 250, 0.25);
+      background: rgba(167, 139, 250, 0.08);
+      color: #a78bfa;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .email-summarizer-btn.large {
+      width: calc(100% - 32px);
+      margin: 12px 16px 0;
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.18), rgba(79, 142, 247, 0.18));
+      border-color: rgba(167, 139, 250, 0.35);
+    }
+
+    .email-summarizer-btn:hover {
+      background: rgba(167, 139, 250, 0.18);
+    }
+
+    .role-badge {
+      font-size: 0.72rem;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 4px 11px;
+      border-radius: 100px;
+    }
+
+    .mode-toggle {
+      display: flex;
+      gap: 2px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .mode-btn {
+      padding: 4px 11px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .mode-btn.active {
+      background: rgba(167, 139, 250, 0.15);
+      color: #a78bfa;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.18);
+      color: var(--green);
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 0.72rem;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    /* LAYOUT - 3 columns? Actually 2 with dashboard integrated */
+    .layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* LEFT COLUMN - Knowledge + Reminders Dashboard */
+    .left-col {
+      width: 35%;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: rgba(17, 21, 32, 0.55);
+      overflow: hidden;
+    }
+
+    /* Reminders Dashboard Section */
+    .reminders-dashboard {
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+
+    .reminders-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .reminders-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .reminders-list {
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .reminder-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+    }
+
+    .reminder-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .reminder-text {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .reminder-time {
+      font-size: 0.65rem;
+      color: var(--accent);
+    }
+
+    .reminder-delete {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .reminder-delete:hover {
+      color: var(--red);
+      background: rgba(248, 113, 113, 0.1);
+    }
+
+    .empty-reminders {
+      text-align: center;
+      color: var(--dim);
+      font-size: 0.7rem;
+      padding: 16px;
+    }
+
+    /* Knowledge Section */
+    .col-hdr {
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .col-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    .add-btn {
+      background: rgba(167, 139, 250, 0.1);
+      border: 1px solid rgba(167, 139, 250, 0.25);
+      color: #a78bfa;
+      padding: 4px 10px;
+      border-radius: 7px;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+
+    .lib-search {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .lib-search input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    .source-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 0;
+    }
+
+    .src-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+    }
+
+    .src-item:hover {
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .s-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      background: rgba(79, 142, 247, .12);
+    }
+
+    .s-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .s-title {
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .s-meta {
+      font-size: 0.6rem;
+      color: var(--muted);
+    }
+
+    /* RIGHT COLUMN - Chat */
+    .right-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-hdr {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .chat-hdr-top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .nexus-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+
+    .int-badge {
+      background: rgba(79, 142, 247, .08);
+      border: 1px solid rgba(79, 142, 247, .18);
+      color: var(--blue);
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-size: 0.6rem;
+    }
+
+    .chat-hint {
+      font-size: 0.68rem;
+      color: var(--dim);
+      margin-bottom: 8px;
+    }
+
+    /* Suggestions */
+    .suggestions-section {
+      padding: 0 16px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .suggestions-title {
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: #9ca3af;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 0.68rem;
+      cursor: pointer;
+    }
+
+    .chip:hover {
+      background: rgba(167, 139, 250, .12);
+      border-color: rgba(167, 139, 250, .4);
+    }
+
+    /* Messages */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .welcome-msg {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .wi {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(167, 139, 250, .1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      margin: 0 auto 10px;
+    }
+
+    .welcome-msg p {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .msg-row {
+      display: flex;
+      gap: 10px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .msg-row.user {
+      flex-direction: row-reverse;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .msg-av {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      flex-shrink: 0;
+    }
+
+    .msg-av.ai {
+      background: rgba(167, 139, 250, .12);
+      border: 1px solid rgba(167, 139, 250, .2);
+    }
+
+    .msg-av.user {
+      background: linear-gradient(135deg, #4f8ef7, #a78bfa);
+      color: #fff;
+    }
+
+    .msg-body {
+      max-width: 75%;
+    }
+
+    .bubble {
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .msg-row.ai .bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .msg-row.user .bubble {
+      background: #a78bfa;
+      color: #fff;
+    }
+
+    .bubble p {
+      margin-bottom: 4px;
+    }
+
+    .bubble strong {
+      color: inherit;
+    }
+
+    .msg-time {
+      font-size: 0.6rem;
+      color: var(--dim);
+      margin-top: 3px;
+    }
+
+    .file-attachment {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(167, 139, 250, .1);
+      border-radius: 8px;
+      padding: 4px 8px;
+      margin-bottom: 6px;
+      font-size: 0.7rem;
+    }
+
+    .msg-sources {
+      margin-top: 5px;
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .src-pill {
+      font-size: 0.6rem;
+      background: rgba(79, 142, 247, .1);
+      border: 1px solid rgba(79, 142, 247, .2);
+      color: var(--blue);
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      padding: 5px 2px;
+    }
+
+    .typing-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #a78bfa;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0);
+      }
+
+      30% {
+        transform: translateY(-4px);
+      }
+    }
+
+    /* Input Bar with Upload Button */
+    .input-bar {
+      padding: 12px 16px 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(11, 13, 20, .85);
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 6px 8px 6px 14px;
+    }
+
+    .upload-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 6px 4px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .upload-btn:hover {
+      color: var(--accent);
+      background: rgba(167, 139, 250, 0.1);
+    }
+
+    #chat-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      resize: none;
+      max-height: 80px;
+      padding: 8px 0;
+    }
+
+    #chat-input::placeholder {
+      color: var(--dim);
+    }
+
+    .send-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #a78bfa;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .input-hint {
+      font-size: 0.6rem;
+      color: var(--dim);
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    /* File Preview */
+    .file-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 12px 0;
+    }
+
+    .file-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .file-chip .remove-file {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 0 2px;
+    }
+
+    .file-chip .remove-file:hover {
+      color: var(--red);
+    }
+
+    /* Modal */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .7);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+      z-index: 100;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: #111520;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .modal input,
+    .modal textarea,
+    .modal select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .m-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .m-btn.pri {
+      background: #a78bfa;
+      color: #fff;
+      border: none;
+    }
+
+    .m-btn.gho {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    @media (max-width: 800px) {
+      .left-col {
+        width: 40%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <div class="tb-left">
+      <a href="module.html" class="back-btn">← Go Back</a>
+      <div class="vdiv"></div>
+      <div class="mod-badge">
+        <div class="mod-ico">🤖</div>
+        <div>
+          <div class="mod-name">WorkSphere Assistant</div>
+          <div class="mod-sub">Secure AI · Reminders · Docs</div>
+        </div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="mode-toggle"><button class="mode-btn active" onclick="setMode('qa',this)">Q&A</button><button
+          class="mode-btn" onclick="setMode('summarize',this)">Summarize</button><button class="mode-btn"
+          onclick="setMode('draft',this)">Draft</button></div>
+      <div class="status-pill">
+        <div class="status-dot"></div>Online
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: Knowledge + Reminders Dashboard -->
+    <div class="left-col">
+      <!-- REMINDERS DASHBOARD -->
+      <div class="reminders-dashboard">
+        <div class="reminders-header">
+          <div class="reminders-title">⏰ Upcoming Reminders</div>
+          <div style="font-size:0.65rem; color:var(--muted);" id="reminder-count">0 active</div>
+        </div>
+        <div class="reminders-list" id="reminders-list">
+          <div class="empty-reminders">No reminders yet. Ask me to set one!</div>
+        </div>
+      </div>
+      <a href="email.html" class="email-summarizer-btn large">Email Summarizer</a>
+      <div class="col-hdr">
+        <div class="col-title">📚 Company Knowledge</div>
+        <button class="add-btn" onclick="openModal()">+ Add</button>
+      </div>
+      <div class="lib-search"><input type="text" id="search-input" placeholder="Search docs..."
+          oninput="filterDocs(this.value)"></div>
+      <div class="source-list" id="source-list"></div>
+    </div>
+
+    <!-- RIGHT: Chat -->
+    <div class="right-col">
+      <div class="chat-hdr">
+        <div class="chat-hdr-top">
+          <div class="nexus-title">WorkSphere Assistant</div>
+          <div class="int-badge">🔒 Internal Only</div>
+        </div>
+        <div class="chat-hint">Ask about policies, upload files, or set reminders</div>
+      </div>
+      <div class="suggestions-section">
+        <div class="suggestions-title">✨ Quick actions</div>
+        <div class="chips" id="suggestions-container"></div>
+      </div>
+      <div class="messages" id="messages">
+        <div class="welcome-msg" id="welcome">
+          <div class="wi">🤖</div>
+          <p>Hi! I can answer company questions, analyze uploaded files, and set reminders. Try: "Remind me to submit
+            expenses tomorrow at 2pm"</p>
+        </div>
+      </div>
+
+      <div class="input-bar">
+        <div id="file-preview-area" class="file-preview"></div>
+        <div class="input-wrap">
+          <button class="upload-btn" onclick="document.getElementById('file-input').click()"
+            title="Upload file">📎</button>
+          <input type="file" id="file-input" multiple style="display:none" accept=".pdf,.txt,.doc,.docx,image/*"
+            onchange="handleFileUpload(this)">
+          <textarea id="chat-input" rows="1" placeholder="Ask anything, or say 'remind me to...'"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+        <div class="input-hint">🔒 Upload PDFs, images, docs · I'll read them and set reminders</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Source Modal -->
+  <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-title">Add Knowledge Source</div>
+      <input type="text" id="m-title" placeholder="Title"><select id="m-type">
+        <option>policy</option>
+        <option>announce</option>
+        <option>process</option>
+      </select>
+      <input type="text" id="m-owner" placeholder="Owner"><textarea id="m-content" rows="3"
+        placeholder="Content..."></textarea>
+      <div class="modal-actions"><button class="m-btn gho" onclick="closeModal()">Cancel</button><button
+          class="m-btn pri" onclick="addSource()">Add</button></div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== KNOWLEDGE BASE ====================
+    let companyDocs = [
+      { id: 1, type: 'policy', title: 'Leave Policy 2025', owner: 'HR', content: '18 days annual leave, 6 casual days. WFH up to 3 days/week.' },
+      { id: 2, type: 'announce', title: 'Q2 Hiring Plan', owner: 'Talent', content: 'Hiring 15 engineers, 5 PMs starting April 15. Referral bonus ₹50k.' },
+      { id: 3, type: 'announce', title: 'Wellness Program', owner: 'HR', content: '₹10,000 wellness allowance, 4 mental health days per year.' },
+      { id: 4, type: 'policy', title: 'Expense Policy', owner: 'Finance', content: 'Submit receipts within 7 days. Under ₹5000 auto-approved.' },
+      { id: 5, type: 'process', title: 'Deployment Runbook', owner: 'DevOps', content: 'Deployments Wednesdays, rollback via ./rollback.sh' }
+    ];
+
+    // ==================== REMINDERS SYSTEM ====================
+    let reminders = [];
+
+    function saveReminders() { localStorage.setItem('worksphere_reminders', JSON.stringify(reminders)); }
+    function loadReminders() {
+      const stored = localStorage.getItem('worksphere_reminders');
+      if (stored) reminders = JSON.parse(stored);
+      renderReminders();
+    }
+    function renderReminders() {
+      const container = document.getElementById('reminders-list');
+      const countSpan = document.getElementById('reminder-count');
+      if (reminders.length === 0) {
+        container.innerHTML = '<div class="empty-reminders">✨ No reminders. Say "remind me to..."</div>';
+        countSpan.innerText = '0 active';
+        return;
+      }
+      countSpan.innerText = `${reminders.length} active`;
+      container.innerHTML = reminders.map((r, idx) => `
+    <div class="reminder-item">
+      <div class="reminder-info">
+        <div class="reminder-text">${escapeHtml(r.text)}</div>
+        <div class="reminder-time">⏰ ${r.time}</div>
+      </div>
+      <button class="reminder-delete" onclick="deleteReminder(${idx})">✕</button>
+    </div>
+  `).join('');
+    }
+
+    function deleteReminder(idx) {
+      reminders.splice(idx, 1);
+      saveReminders();
+      renderReminders();
+    }
+
+    function addReminder(text, timeStr) {
+      reminders.push({ text, time: timeStr, createdAt: new Date().toISOString() });
+      saveReminders();
+      renderReminders();
+      return true;
+    }
+
+    // Parse natural language reminders
+    function parseReminder(message) {
+      const lower = message.toLowerCase();
+      const remindPattern = /remind\s+me\s+to\s+(.+?)(?:\s+at\s+|\s+on\s+|\s+tomorrow\s+|\s+next\s+|\s+in\s+)(.+?)$/i;
+      const simplePattern = /remind\s+me\s+to\s+(.+)/i;
+
+      if (remindPattern.test(message)) {
+        const match = message.match(remindPattern);
+        if (match) {
+          let task = match[1].trim();
+          let when = match[2].trim();
+          return { task, when, valid: true };
+        }
+      } else if (simplePattern.test(message)) {
+        const match = message.match(simplePattern);
+        if (match) {
+          return { task: match[1].trim(), when: "today", valid: true };
+        }
+      }
+      return null;
+    }
+
+    // ==================== FILE UPLOAD ====================
+    let pendingFiles = []; // { name, type, data, content }
+
+    function handleFileUpload(input) {
+      const files = Array.from(input.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const isImage = file.type.startsWith('image/');
+          const base64 = e.target.result.split(',')[1];
+          pendingFiles.push({
+            name: file.name,
+            type: file.type,
+            data: base64,
+            isImage: isImage,
+            size: file.size
+          });
+          renderFilePreviews();
+        };
+        reader.readAsDataURL(file);
+      });
+      input.value = '';
+    }
+
+    function renderFilePreviews() {
+      const container = document.getElementById('file-preview-area');
+      if (pendingFiles.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      container.innerHTML = pendingFiles.map((f, i) => `
+    <div class="file-chip">
+      <span>${f.isImage ? '🖼️' : '📄'}</span>
+      <span style="max-width:120px; overflow:hidden; text-overflow:ellipsis;">${f.name}</span>
+      <button class="remove-file" onclick="removeFile(${i})">✕</button>
+    </div>
+  `).join('');
+    }
+
+    function removeFile(idx) {
+      pendingFiles.splice(idx, 1);
+      renderFilePreviews();
+    }
+
+    // ==================== CHAT & AI ====================
+    let currentMode = 'qa';
+    let chatHistory = [];
+    let isLoading = false;
+    let filteredDocs = [...companyDocs];
+
+    function renderDocs() {
+      const container = document.getElementById('source-list');
+      container.innerHTML = filteredDocs.map(d => `
+    <div class="src-item" onclick="sendQuick('Tell me about ${d.title}')">
+      <div class="s-icon">${d.type === 'policy' ? '📋' : d.type === 'announce' ? '📢' : '⚙️'}</div>
+      <div class="s-info"><div class="s-title">${d.title}</div><div class="s-meta">${d.owner}</div></div>
+    </div>
+  `).join('');
+    }
+    function filterDocs(q) {
+      filteredDocs = companyDocs.filter(d => d.title.toLowerCase().includes(q.toLowerCase()));
+      renderDocs();
+    }
+    function selectAndAsk(title) { sendQuick(`Tell me about ${title}`); }
+
+    function getCompanyAnswer(question, files = []) {
+      const lowerQ = question.toLowerCase();
+
+      // Check for reminder intent
+      const reminder = parseReminder(question);
+      if (reminder) {
+        addReminder(reminder.task, reminder.when);
+        return { text: `✅ Reminder set! I'll remind you to **${reminder.task}** ${reminder.when === 'today' ? 'later today' : `on ${reminder.when}`}. You can view all reminders in the left panel.`, sources: [] };
+      }
+
+      // Check for file analysis
+      if (files.length > 0) {
+        const fileSummary = files.map(f => `📎 ${f.name}`).join(', ');
+        return { text: `📄 I've received your file(s): ${fileSummary}. I can help summarize them or answer questions about their content. Just ask me about what's inside!`, sources: [] };
+      }
+
+      // Company knowledge lookup
+      const relevant = companyDocs.filter(d =>
+        lowerQ.includes(d.title.toLowerCase().split(' ')[0]) ||
+        lowerQ.includes(d.type) ||
+        d.content.toLowerCase().split(' ').some(w => w.length > 4 && lowerQ.includes(w))
+      ).slice(0, 3);
+
+      if (lowerQ.includes('hiring')) {
+        const hiring = companyDocs.find(d => d.title.includes('Hiring'));
+        return { text: `**🎯 Hiring Update**\n\n${hiring?.content || 'Hiring starts April 15. 15 engineering roles, 5 PMs. Referral bonus ₹50k.'}\n\nWant me to share the referral process?`, sources: [hiring] };
+      }
+      if (lowerQ.includes('wellness')) {
+        const w = companyDocs.find(d => d.title.includes('Wellness'));
+        return { text: `**🌿 Wellness Program**\n\n${w?.content}\n\nIncludes ₹10,000 annual allowance + 4 mental health days.`, sources: [w] };
+      }
+      if (lowerQ.includes('leave')) {
+        const leave = companyDocs.find(d => d.title.includes('Leave'));
+        return { text: `**🏖️ Leave Policy**\n\n${leave?.content}\n\nNeed help requesting time off?`, sources: [leave] };
+      }
+      if (lowerQ.includes('expense')) {
+        const exp = companyDocs.find(d => d.title.includes('Expense'));
+        return { text: `**💰 Expense Policy**\n\n${exp?.content}\n\nSubmit via Zoho Expense within 7 days.`, sources: [exp] };
+      }
+
+      if (relevant.length > 0) {
+        let resp = `**${relevant[0].title}** (${relevant[0].owner})\n\n${relevant[0].content}`;
+        if (currentMode === 'summarize') resp = `**Summary:**\n• ${relevant[0].content.split('. ').slice(0, 2).join('\n• ')}`;
+        if (currentMode === 'draft') resp = `**Subject:** Update on ${relevant[0].title}\n\nDear team,\n\n${relevant[0].content.substring(0, 120)}...\n\nBest regards,\nWorkSphere`;
+        return { text: resp, sources: relevant };
+      }
+
+      return { text: `I can help with company policies, hiring updates, wellness programs, and set reminders. Try:\n• "Remind me to submit expenses tomorrow at 2pm"\n• "What's the hiring plan?"\n• "Summarize wellness program"`, sources: [] };
+    }
+
+    function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 80) + 'px'; }
+    function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+    function hideWelcome() { const w = document.getElementById('welcome'); if (w) w.remove(); }
+    function getTime() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+    function appendMessage(role, text, sources = [], fileAttachments = []) {
+      hideWelcome();
+      const container = document.getElementById('messages');
+      const row = document.createElement('div');
+      row.className = `msg-row ${role}`;
+      const avatar = document.createElement('div');
+      avatar.className = `msg-av ${role}`;
+      avatar.textContent = role === 'ai' ? '🤖' : 'JD';
+      const body = document.createElement('div');
+      body.className = 'msg-body';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      let fileHtml = '';
+      if (fileAttachments.length > 0) {
+        fileHtml = `<div class="file-attachment">📎 ${fileAttachments.map(f => f.name).join(', ')}</div>`;
+      }
+      let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+      bubble.innerHTML = fileHtml + formatted;
+
+      const time = document.createElement('div');
+      time.className = 'msg-time';
+      time.textContent = getTime();
+      body.appendChild(bubble);
+      body.appendChild(time);
+
+      if (role === 'ai' && sources && sources.length) {
+        const srcDiv = document.createElement('div');
+        srcDiv.className = 'msg-sources';
+        srcDiv.innerHTML = sources.map(s => `<span class="src-pill" onclick="sendQuick('Tell me about ${s.title}')">${s.title}</span>`).join('');
+        body.appendChild(srcDiv);
+      }
+
+      row.appendChild(avatar);
+      row.appendChild(body);
+      container.appendChild(row);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function showTyping() {
+      hideWelcome();
+      const container = document.getElementById('messages');
+      const row = document.createElement('div');
+      row.className = 'msg-row ai';
+      row.id = 'typing';
+      const avatar = document.createElement('div');
+      avatar.className = 'msg-av ai';
+      avatar.textContent = '🤖';
+      const body = document.createElement('div');
+      body.className = 'msg-body';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+      body.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(body);
+      container.appendChild(row);
+      container.scrollTop = container.scrollHeight;
+    }
+    function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+    async function sendMessage() {
+      if (isLoading) return;
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      const files = [...pendingFiles];
+      if (!text && files.length === 0) return;
+
+      input.value = '';
+      input.style.height = 'auto';
+      pendingFiles = [];
+      renderFilePreviews();
+      isLoading = true;
+      document.getElementById('send-btn').disabled = true;
+
+      appendMessage('user', text || '📎 Uploaded file(s)', [], files);
+      showTyping();
+
+      setTimeout(() => {
+        removeTyping();
+        const response = getCompanyAnswer(text, files);
+        appendMessage('ai', response.text, response.sources);
+        isLoading = false;
+        document.getElementById('send-btn').disabled = false;
+        input.focus();
+      }, 400);
+    }
+
+    function sendQuick(q) {
+      document.getElementById('chat-input').value = q;
+      sendMessage();
+    }
+
+    function setMode(mode, btn) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Modal functions
+    function openModal() { document.getElementById('overlay').classList.add('open'); }
+    function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+    function addSource() {
+      const title = document.getElementById('m-title').value.trim();
+      const type = document.getElementById('m-type').value;
+      const owner = document.getElementById('m-owner').value.trim() || 'Team';
+      const content = document.getElementById('m-content').value.trim();
+      if (!title || !content) return;
+      companyDocs.push({ id: companyDocs.length + 1, type, title, owner, content });
+      filteredDocs = [...companyDocs];
+      renderDocs();
+      closeModal();
+      document.getElementById('m-title').value = '';
+      document.getElementById('m-content').value = '';
+      sendQuick(`Added "${title}" to knowledge base.`);
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function (m) { return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'; }); }
+
+    function updateSuggestions() {
+      const container = document.getElementById('suggestions-container');
+      container.innerHTML = [
+        "⏰ Remind me to submit timesheet tomorrow at 5pm",
+        "📢 What's the hiring plan?",
+        "🌿 Tell me about wellness program",
+        "📄 Upload a policy and summarize it"
+      ].map(s => `<div class="chip" onclick="sendQuick('${s.replace(/'/g, "\\'")}')">${s}</div>`).join('');
+    }
+
+    // Initialize
+    renderDocs();
+    loadReminders();
+    updateSuggestions();
+  </script>
+</body>
+
+</html>

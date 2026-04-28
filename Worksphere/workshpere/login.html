@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>WorkSphere — Sign in</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-deep: #0a0c15;
+      --bg-card: #11131f;
+      --bg-elevated: #181c2c;
+      --border-subtle: rgba(99, 102, 120, 0.3);
+      --border-glow: rgba(59, 130, 246, 0.4);
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #f43f5e;
+      --accent-purple: #a855f7;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #5b6e8c;
+      --gradient-primary: linear-gradient(135deg, #3b82f6, #06b6d4);
+      --gradient-admin: linear-gradient(135deg, #a855f7, #ec4899);
+      --gradient-hr: linear-gradient(135deg, #f59e0b, #ef4444);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-deep);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    /* Animated background glow */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: 
+        radial-gradient(ellipse 800px 600px at 15% 20%, rgba(59,130,246,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse 600px 500px at 85% 80%, rgba(168,85,247,0.06) 0%, transparent 60%);
+      z-index: 0;
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 480px;
+      animation: fadeUp 0.5s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(2px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 48px 40px;
+      box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.6);
+      transition: border-color 0.2s;
+    }
+
+    .login-card:hover {
+      border-color: var(--border-glow);
+    }
+
+    /* Logo */
+    .logo {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .logo h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.02em;
+    }
+    .logo p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Role selector (3 roles) */
+    .role-tabs {
+      display: flex;
+      gap: 8px;
+      background: var(--bg-elevated);
+      padding: 6px;
+      border-radius: 60px;
+      margin-bottom: 32px;
+    }
+    .role-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      background: transparent;
+      color: var(--text-secondary);
+      letter-spacing: -0.2px;
+    }
+    .role-tab.active {
+      background: var(--gradient-primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    }
+    .role-tab[data-role="admin"].active {
+      background: var(--gradient-admin);
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+    }
+    .role-tab[data-role="hr"].active {
+      background: var(--gradient-hr);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    .role-tab:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    /* Input fields */
+    .input-group {
+      margin-bottom: 22px;
+    }
+    .input-group label {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .input-group input {
+      width: 100%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--text-primary);
+      outline: none;
+      transition: all 0.2s;
+    }
+    .input-group input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    .input-group input::placeholder {
+      color: rgba(148, 163, 184, 0.4);
+    }
+
+    /* Options row (remember & forgot) */
+    .options-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      font-size: 0.75rem;
+    }
+    .checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .checkbox input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-blue);
+      cursor: pointer;
+    }
+    .forgot-link {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .forgot-link:hover {
+      color: var(--accent-blue);
+      text-decoration: underline;
+    }
+
+    /* Login button */
+    .login-btn {
+      width: 100%;
+      background: var(--gradient-primary);
+      border: none;
+      padding: 14px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+    }
+    .login-btn:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+    }
+
+    /* Demo credentials panel */
+    .demo-panel {
+      background: rgba(10, 16, 34, 0.7);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      border: 1px solid var(--border-subtle);
+      margin-top: 8px;
+    }
+    .demo-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .demo-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .demo-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(99, 102, 120, 0.2);
+    }
+    .demo-role {
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.15);
+      padding: 2px 8px;
+      border-radius: 30px;
+      font-size: 0.65rem;
+    }
+    .demo-email {
+      color: var(--text-secondary);
+      font-family: monospace;
+      font-size: 0.7rem;
+    }
+    .fill-btn {
+      background: none;
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      border-radius: 30px;
+      font-size: 0.65rem;
+      cursor: pointer;
+      color: var(--accent-cyan);
+      transition: all 0.2s;
+    }
+    .fill-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: var(--accent-blue);
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0 20px;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* Google button (mock) */
+    .google-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      padding: 12px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .google-btn:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-glow);
+      color: var(--text-primary);
+    }
+
+    /* Toast message */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e243b;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 60px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 500px) {
+      .login-card { padding: 36px 24px; }
+      .demo-item { flex-wrap: wrap; gap: 8px; }
+      .toast { white-space: normal; text-align: center; width: 90%; font-size: 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-card">
+    <div class="logo">
+      <h1>WorkSphere</h1>
+      <p>secure access · role‑based workspace</p>
+    </div>
+
+    <!-- 3-role selector -->
+    <div class="role-tabs" id="roleTabs">
+      <div class="role-tab active" data-role="employee">👤 Employee</div>
+      <div class="role-tab" data-role="hr">🏢 HR / Manager</div>
+      <div class="role-tab" data-role="admin">👑 Admin</div>
+    </div>
+
+    <!-- Email field -->
+    <div class="input-group">
+      <label>Work email</label>
+      <input type="email" id="emailInput" placeholder="name@worksphere.com" autocomplete="email">
+    </div>
+
+    <!-- Password field -->
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <!-- Options -->
+    <div class="options-row">
+      <label class="checkbox">
+        <input type="checkbox" id="rememberCheckbox"> Keep me signed in
+      </label>
+      <a href="#" class="forgot-link" id="forgotLink">Forgot password?</a>
+    </div>
+
+    <!-- Sign in button -->
+    <button class="login-btn" id="loginBtn">
+      <span>Sign in</span> <span>→</span>
+    </button>
+
+    <div class="divider">or continue with</div>
+
+    <!-- Google SSO mock -->
+    <button class="google-btn" id="googleMockBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Sign in with Google
+    </button>
+
+    <!-- Demo credentials panel for quick access -->
+    <div class="demo-panel">
+      <div class="demo-title">
+        <span>🔐</span> Demo credentials — click to auto-fill
+      </div>
+      <div class="demo-grid">
+        <div class="demo-item">
+          <span><span class="demo-role">👤 Employee</span></span>
+          <span class="demo-email">employee@worksphere.com</span>
+          <button class="fill-btn" data-email="employee@worksphere.com" data-role="employee">Fill</button>
+        </div>
+        <div class="demo-item">
+          <span><span class="demo-role">🏢 HR Manager</span></span>
+          <span class="demo-email">hr@worksphere.com</span>
+          <button class="fill-btn" data-email="hr@worksphere.com" data-role="hr">Fill</button>
+        </div>
+        <div class="demo-item">
+          <span><span class="demo-role">👑 Admin</span></span>
+          <span class="demo-email">admin@worksphere.com</span>
+          <button class="fill-btn" data-email="admin@worksphere.com" data-role="admin">Fill</button>
+        </div>
+      </div>
+      <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 12px; text-align: center;">
+        ⚡ Any password works (demo mode)
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+  // Toast notification helper
+  function showToast(message, isError = false) {
+    const toast = document.getElementById('toastEl');
+    toast.textContent = message;
+    toast.style.background = isError ? 'rgba(244, 63, 94, 0.9)' : '#1e243b';
+    toast.style.borderColor = isError ? 'rgba(244,63,94,0.5)' : 'rgba(59,130,246,0.3)';
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.style.background = '#1e243b';
+    }, 2800);
+  }
+
+  // Get currently selected role from tabs
+  function getSelectedRole() {
+    const activeTab = document.querySelector('.role-tab.active');
+    if (activeTab) {
+      return activeTab.getAttribute('data-role');
+    }
+    return 'employee';
+  }
+
+  // Set active role tab (UI only)
+  function setActiveRole(role) {
+    const tabs = document.querySelectorAll('.role-tab');
+    tabs.forEach(tab => {
+      if (tab.getAttribute('data-role') === role) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+  }
+
+  // Fill email and optionally switch role
+  function fillDemoCredentials(email, role) {
+    document.getElementById('emailInput').value = email;
+    document.getElementById('passwordInput').value = 'demo123';
+    if (role) {
+      setActiveRole(role);
+    }
+    showToast(`✓ ${role === 'employee' ? 'Employee' : role === 'hr' ? 'HR Manager' : 'Admin'} credentials filled`, false);
+  }
+
+  // Main login handler — performs validation and redirects (simulated)
+  function handleLogin() {
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    const selectedRole = getSelectedRole();
+    const rememberMe = document.getElementById('rememberCheckbox').checked;
+
+    // Validation
+    if (!email) {
+      showToast('Please enter your work email', true);
+      return;
+    }
+    if (!password) {
+      showToast('Please enter your password', true);
+      return;
+    }
+
+    // Basic email format check
+    if (!email.includes('@') || !email.includes('.')) {
+      showToast('Please enter a valid email address', true);
+      return;
+    }
+
+    // Role-based email hint validation (soft check for demo consistency)
+    let expectedRoleHint = '';
+    if (email.toLowerCase().includes('hr@') || email.toLowerCase().includes('hr-')) {
+      if (selectedRole !== 'hr') {
+        showToast(`⚠️ The email "${email}" looks like HR credentials. Please select the HR role above.`, true);
+        return;
+      }
+    } else if (email.toLowerCase().includes('admin@') || email.toLowerCase().includes('admin-')) {
+      if (selectedRole !== 'admin') {
+        showToast(`⚠️ The email "${email}" looks like Admin credentials. Please select the Admin role.`, true);
+        return;
+      }
+    } else if (email.toLowerCase().includes('employee@') || email.toLowerCase() === 'employee@worksphere.com') {
+      if (selectedRole !== 'employee') {
+        showToast(`⚠️ Employee email selected but role is ${selectedRole}. Please switch to Employee tab.`, true);
+        return;
+      }
+    }
+
+    // If remember me, store in localStorage (just for demo)
+    if (rememberMe) {
+      localStorage.setItem('worksphere_remember_email', email);
+      localStorage.setItem('worksphere_remember_role', selectedRole);
+    } else {
+      localStorage.removeItem('worksphere_remember_email');
+      localStorage.removeItem('worksphere_remember_role');
+    }
+
+    // SIMULATE SUCCESSFUL LOGIN — REDIRECT PLACEHOLDER
+    // In a real app you would redirect to dashboard based on role.
+    // For this pure login page we show a success message and simulate navigation.
+    const roleDisplay = selectedRole === 'employee' ? 'Employee Dashboard' : (selectedRole === 'hr' ? 'HR / Manager Dashboard' : 'Admin Control Panel');
+    
+    showToast(`✨ Welcome back! Redirecting to ${roleDisplay}...`, false);
+    
+    // Simulate redirect after 0.8 sec (for demo purposes)
+    setTimeout(() => {
+      if (selectedRole === 'hr') {
+        window.location.href = "manager/modulem.html";
+      } else {
+        window.location.href = "module.html";
+      }
+    }, 800);
+  }
+
+  // Forgot password handler (demo)
+  function handleForgotPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email) {
+      showToast('Please enter your email address to reset password', true);
+    } else {
+      showToast(`📧 Password reset link sent to ${email} (demo mode)`, false);
+    }
+  }
+
+  // Google sign-in mock
+  function handleGoogleSignIn() {
+    showToast('🔐 Google SSO integration — demo only. Use email/password for testing.', false);
+  }
+
+  // Restore remembered email if exists
+  function restoreRemembered() {
+    const rememberedEmail = localStorage.getItem('worksphere_remember_email');
+    const rememberedRole = localStorage.getItem('worksphere_remember_role');
+    if (rememberedEmail) {
+      document.getElementById('emailInput').value = rememberedEmail;
+      document.getElementById('rememberCheckbox').checked = true;
+      if (rememberedRole && ['employee', 'hr', 'admin'].includes(rememberedRole)) {
+        setActiveRole(rememberedRole);
+      }
+      showToast('Welcome back! Credentials restored.', false);
+    }
+  }
+
+  // Event Listeners
+  document.getElementById('loginBtn').addEventListener('click', handleLogin);
+  document.getElementById('forgotLink').addEventListener('click', handleForgotPassword);
+  document.getElementById('googleMockBtn').addEventListener('click', handleGoogleSignIn);
+
+  // Role tab switching
+  const roleTabs = document.querySelectorAll('.role-tab');
+  roleTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const role = tab.getAttribute('data-role');
+      setActiveRole(role);
+      // Optional: clear any previous error styling
+      showToast(`Switched to ${role === 'employee' ? 'Employee' : role === 'hr' ? 'HR Manager' : 'Admin'} mode`, false);
+    });
+  });
+
+  // Demo fill buttons
+  const fillButtons = document.querySelectorAll('.fill-btn');
+  fillButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const email = btn.getAttribute('data-email');
+      const role = btn.getAttribute('data-role');
+      fillDemoCredentials(email, role);
+    });
+  });
+
+  // Enter key submit
+  const passwordInput = document.getElementById('passwordInput');
+  const emailInput = document.getElementById('emailInput');
+  const submitOnEnter = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleLogin();
+    }
+  };
+  passwordInput.addEventListener('keypress', submitOnEnter);
+  emailInput.addEventListener('keypress', submitOnEnter);
+
+  // Restore session on load
+  restoreRemembered();
+</script>
+</body>
+</html>

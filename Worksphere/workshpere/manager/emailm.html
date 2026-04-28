@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>WorkSphere Mail – AI Email Assistant & Reporter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0b0d14;
+      --surface: #111520;
+      --surface2: #161b2e;
+      --border: rgba(255,255,255,0.07);
+      --accent: #a78bfa;
+      --blue: #4f8ef7;
+      --green: #34d399;
+      --red: #f87171;
+      --orange: #fb923c;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --dim: #374151;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 10% 0%, rgba(79,142,247,.09) 0%, transparent 55%),
+                  radial-gradient(ellipse 55% 45% at 90% 100%, rgba(167,139,250,.07) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Topbar */
+    .topbar {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 60px;
+      background: rgba(11,13,20,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .tb-left { display: flex; align-items: center; gap: 14px; }
+    .back-btn { color: var(--muted); text-decoration: none; font-size: 0.8rem; cursor: pointer; }
+    .back-btn:hover { color: var(--text); }
+    .vdiv { width: 1px; height: 20px; background: var(--border); }
+    .mod-badge { display: flex; align-items: center; gap: 9px; }
+    .mod-ico { width: 32px; height: 32px; border-radius: 10px; background: rgba(79,142,247,.12); border: 1px solid rgba(79,142,247,.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .mod-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; color: #fff; letter-spacing: -0.3px; }
+    .mod-sub { font-size: 0.68rem; color: var(--muted); }
+    .tb-right { display: flex; align-items: center; gap: 12px; }
+    .gmail-connect-btn { background: linear-gradient(135deg, #ea4335, #c5221f); border: none; color: white; padding: 7px 16px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .compose-btn { background: linear-gradient(135deg, #4f8ef7, #a78bfa); border: none; color: white; padding: 7px 16px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .compose-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+
+    /* Main Layout: 2 Columns */
+    .workspace {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      gap: 1px;
+      background: var(--border);
+    }
+    .email-section {
+      flex: 1.2;
+      display: flex;
+      flex-direction: column;
+      background: rgba(17,21,32,0.5);
+      overflow: hidden;
+    }
+    .assistant-section {
+      flex: 0.9;
+      background: rgba(17,21,32,0.6);
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Control Bar */
+    .control-bar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: 0.15s;
+    }
+    .filter-pill.active { background: var(--blue); color: white; border-color: var(--blue); }
+    .sort-selector { background: var(--surface2); border: 1px solid var(--border); padding: 4px 10px; border-radius: 30px; font-size: 0.7rem; color: var(--text); cursor: pointer; }
+    .sync-status { font-size: 0.65rem; background: rgba(52,211,153,0.1); padding: 4px 10px; border-radius: 20px; color: var(--green); }
+
+    /* Email List */
+    .email-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .email-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      transition: 0.2s;
+      border-left-width: 3px;
+      cursor: pointer;
+    }
+    .email-card:hover { background: #1a1f2c; transform: translateX(2px); }
+    .card-header { display: flex; justify-content: space-between; margin-bottom: 5px; flex-wrap: wrap; }
+    .subject { font-weight: 600; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .priority-badge { font-size: 0.55rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .priority-urgent { background: rgba(251,146,60,0.2); color: #fb923c; }
+    .priority-important { background: rgba(248,113,113,0.15); color: #f87171; }
+    .priority-general { background: rgba(79,142,247,0.12); color: #4f8ef7; }
+    .priority-spam { background: rgba(107,114,128,0.2); color: #9ca3af; }
+    .from-line { font-size: 0.65rem; color: var(--muted); margin-bottom: 5px; }
+    .snippet { font-size: 0.7rem; color: #b9c0d4; margin-bottom: 8px; }
+    .footer-meta { display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--dim); }
+    .delete-email-btn { cursor: pointer; opacity: 0.6; transition: 0.1s; }
+    .delete-email-btn:hover { opacity: 1; color: var(--red); }
+
+    /* AI ASSISTANT PANEL */
+    .assistant-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+    }
+    .assistant-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .assistant-sub {
+      font-size: 0.7rem;
+      color: var(--accent);
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .message {
+      display: flex;
+      gap: 10px;
+      animation: fadeSlide 0.2s ease;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message.ai .bubble { background: var(--surface2); border: 1px solid var(--border); border-radius: 18px; border-top-left-radius: 4px; }
+    .message.user { flex-direction: row-reverse; }
+    .message.user .bubble { background: var(--blue); color: white; border-radius: 18px; border-top-right-radius: 4px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(167,139,250,0.2); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; }
+    .bubble { padding: 10px 14px; max-width: 85%; font-size: 0.75rem; line-height: 1.45; }
+    .typing-indicator { display: flex; gap: 4px; padding: 8px 12px; }
+    .typing-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+
+    .input-area {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      gap: 8px;
+    }
+    .assistant-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 8px 14px;
+      color: var(--text);
+      font-size: 0.75rem;
+      outline: none;
+    }
+    .send-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 24px;
+      padding: 0 14px;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .summary-btn {
+      background: rgba(79,142,247,0.15);
+      border: 1px solid rgba(79,142,247,0.3);
+      border-radius: 24px;
+      padding: 6px 12px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      color: var(--blue);
+      margin-top: 10px;
+      transition: 0.2s;
+    }
+    .summary-btn:hover { background: rgba(79,142,247,0.25); }
+
+    .empty-inbox { text-align: center; padding: 40px; color: var(--dim); }
+    .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e2438; padding: 8px 20px; border-radius: 40px; font-size: 0.7rem; z-index: 300; backdrop-filter: blur(12px); opacity: 0; transition: 0.2s; pointer-events: none; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-left">
+    <div class="back-btn" onclick="history.back()">← Dashboard</div>
+    <div class="vdiv"></div>
+    <div class="mod-badge">
+      <div class="mod-ico">📬</div>
+      <div><div class="mod-name">WorkSphere Mail</div><div class="mod-sub">AI Reporter · Assistant</div></div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <button class="gmail-connect-btn" id="gmailBtn" onclick="initGmailConnection()">🔗 Link Gmail</button>
+    <button class="compose-btn" id="composeMainBtn" onclick="openEmailClient()">✍️ Compose</button>
+  </div>
+</div>
+
+<div class="workspace">
+  <!-- LEFT: EMAIL SECTION -->
+  <div class="email-section">
+    <div class="control-bar">
+      <div class="filter-group" id="filterGroup">
+        <button class="filter-pill active" data-filter="all">All</button>
+        <button class="filter-pill" data-filter="urgent">Urgent</button>
+        <button class="filter-pill" data-filter="important">Important</button>
+        <button class="filter-pill" data-filter="general">General</button>
+        <button class="filter-pill" data-filter="spam">Spam</button>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <select id="sortSelect" class="sort-selector">
+          <option value="date-desc">Newest</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div id="gmailStatus" class="sync-status">⚡ Not linked</div>
+      </div>
+    </div>
+    <div class="email-list" id="emailList"></div>
+  </div>
+
+  <!-- RIGHT: AI ASSISTANT + REPORTER -->
+  <div class="assistant-section">
+    <div class="assistant-header">
+      <div class="assistant-title">🤖 WorkSphere AI <span style="font-size:0.7rem; background:rgba(167,139,250,0.2); padding:2px 8px; border-radius:20px;">Personal Reporter</span></div>
+      <div class="assistant-sub">📋 "Summarize my inbox" · "What's urgent?" · "What to ignore?"</div>
+      <button class="summary-btn" onclick="generateFullReport()">🎙️ Generate Daily Email Report</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="message ai">
+        <div class="avatar">🤖</div>
+        <div class="bubble">👋 Hi! I'm your WorkSphere Mail Assistant. I act like your personal email reporter. I can summarize everything, tell you what needs attention, what to ignore, and answer your questions.<br><br>✨ Try:<br>• "Summarize my inbox"<br>• "What should I read first?"<br>• "Any urgent emails?"<br>• "What can I ignore?"</div>
+      </div>
+    </div>
+    <div class="input-area">
+      <input type="text" class="assistant-input" id="chatInput" placeholder="Ask your assistant..." onkeypress="if(event.key==='Enter') sendAssistantMessage()">
+      <button class="send-btn" onclick="sendAssistantMessage()">➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- EMAIL DATABASE ----------
+  let emails = [
+    { id: 1, from: "ceo@worksphere.com", subject: "URGENT: Board meeting tomorrow 9 AM", body: "Please prepare Q2 financials and strategic roadmap for tomorrow's emergency board call.", date: "2026-04-27", classification: "urgent", source: "demo" },
+    { id: 2, from: "hr@worksphere.com", subject: "Wellness Program: New HSA contributions", body: "Your wellness allowance has increased to 20k. Claim by May 15th.", date: "2026-04-26", classification: "general", source: "demo" },
+    { id: 3, from: "security@alert.com", subject: "Your account login from new device", body: "We detected a login from an unknown device. If this wasn't you, reset password.", date: "2026-04-27", classification: "important", source: "demo" },
+    { id: 4, from: "noreply@prize.com", subject: "You won a $1000 gift card", body: "Click this link to claim your prize immediately.", date: "2026-04-24", classification: "spam", source: "demo" },
+    { id: 5, from: "product@worksphere.com", subject: "IMPORTANT: Design sign-off required by EOD", body: "Please review the new UI mocks and approve before deadline.", date: "2026-04-27", classification: "important", source: "demo" },
+    { id: 6, from: "finance@worksphere.com", subject: "Urgent: Expense report approval", body: "Your Q2 expenses are pending. Please approve within 24 hours.", date: "2026-04-27", classification: "urgent", source: "demo" }
+  ];
+  let nextId = 7;
+  let gmailToken = null;
+  let currentFilter = "all", currentSort = "date-desc";
+
+  // Classification Engine
+  function classifyEmail(subject, body) {
+    const text = (subject + " " + body).toLowerCase();
+    if (text.includes("urgent") || text.includes("asap") || text.includes("critical") || text.includes("immediate") || text.includes("board meeting") || text.includes("emergency")) return "urgent";
+    if (text.includes("important") || text.includes("action required") || text.includes("approval") || text.includes("sign-off") || text.includes("mandatory")) return "important";
+    if (text.includes("click here") || text.includes("prize") || text.includes("winner") || text.includes("lottery") || text.includes("spam") || text.includes("unsubscribe")) return "spam";
+    return "general";
+  }
+
+  function getFilteredSorted() {
+    let filtered = emails.filter(e => currentFilter === "all" ? true : e.classification === currentFilter);
+    if (currentSort === "date-desc") filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+    else if (currentSort === "priority") {
+      const order = { urgent:1, important:2, general:3, spam:4 };
+      filtered.sort((a,b) => (order[a.classification]||5) - (order[b.classification]||5));
+    }
+    return filtered;
+  }
+
+  function renderEmails() {
+    const container = document.getElementById("emailList");
+    const filtered = getFilteredSorted();
+    if (filtered.length === 0) { container.innerHTML = `<div class="empty-inbox">📭 No emails. Compose or link Gmail.</div>`; return; }
+    container.innerHTML = filtered.map(e => {
+      let badgeClass = e.classification === "urgent" ? "priority-urgent" : (e.classification === "important" ? "priority-important" : (e.classification === "general" ? "priority-general" : "priority-spam"));
+      let borderColor = e.classification === "urgent" ? "#fb923c" : (e.classification === "important" ? "#f87171" : "#4f8ef7");
+      return `<div class="email-card" style="border-left-color: ${borderColor};">
+        <div class="card-header"><div class="subject"><strong>${escapeHtml(e.subject)}</strong> <span class="priority-badge ${badgeClass}">${e.classification.toUpperCase()}</span></div></div>
+        <div class="from-line">📧 ${escapeHtml(e.from)}</div>
+        <div class="snippet">${escapeHtml(e.body.substring(0, 100))}${e.body.length>100?'…':''}</div>
+        <div class="footer-meta"><span>📅 ${e.date}</span><span class="delete-email-btn" onclick="event.stopPropagation(); deleteEmail(${e.id})">🗑 Delete</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  function deleteEmail(id) { 
+    emails = emails.filter(e => e.id !== id); 
+    renderEmails(); 
+    showToast("Email deleted");
+  }
+
+  // ---------- COMPOSE: Opens your default email client ----------
+  function openEmailClient() {
+    // This opens the user's default mail client (mailto:)
+    // It will pre-fill nothing, just launch the mail app or webmail.
+    window.location.href = "mailto:?subject=WorkSphere%20Mail&body=Hello%2C%0A%0A";
+    showToast("Opening your default email client...");
+  }
+
+  // ---------- GMAIL INTEGRATION (Real OAuth + Fetch) ----------
+  function initGmailConnection() {
+    if (!window.google) { showToast("Loading Google SDK, try again"); setTimeout(initGmailConnection, 800); return; }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: "1080626253929-6iahmogd4qjepathqhgv3q34dvu7f3tr.apps.googleusercontent.com",
+      scope: "https://www.googleapis.com/auth/gmail.readonly",
+      callback: async (resp) => {
+        if (resp.access_token) {
+          gmailToken = resp.access_token;
+          document.getElementById("gmailStatus").innerHTML = "✅ Linked";
+          document.getElementById("gmailBtn").innerHTML = "📥 Fetch Inbox";
+          document.getElementById("gmailBtn").onclick = fetchGmailInbox;
+          showToast("Gmail linked! Click 'Fetch Inbox' to load emails.");
+        } else showToast("Auth failed");
+      }
+    });
+    client.requestAccessToken();
+  }
+
+  async function fetchGmailInbox() {
+    if (!gmailToken) { showToast("Link Gmail first"); return; }
+    showToast("Fetching latest emails...");
+    try {
+      const listRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=15&labelIds=INBOX", { headers: { Authorization: `Bearer ${gmailToken}` } });
+      const listData = await listRes.json();
+      if (!listData.messages) { showToast("No emails in inbox"); return; }
+      let importedCount = 0;
+      for (let msg of listData.messages.slice(0, 12)) {
+        const msgRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`, { headers: { Authorization: `Bearer ${gmailToken}` } });
+        const full = await msgRes.json();
+        const headers = full.payload.headers;
+        const from = headers.find(h=>h.name==="From")?.value || "unknown";
+        const subject = headers.find(h=>h.name==="Subject")?.value || "(no subject)";
+        let bodyText = "";
+        if (full.payload.parts) {
+          const textPart = full.payload.parts.find(p=>p.mimeType==="text/plain");
+          if (textPart && textPart.body.data) bodyText = atob(textPart.body.data.replace(/-/g,'+').replace(/_/g,'/'));
+        } else if (full.payload.body.data) bodyText = atob(full.payload.body.data.replace(/-/g,'+').replace(/_/g,'/'));
+        bodyText = decodeURIComponent(escape(bodyText)).substring(0, 500);
+        const date = new Date(parseInt(full.internalDate)).toISOString().split('T')[0];
+        const exists = emails.some(e=> e.subject === subject && e.from === from && e.source === "gmail");
+        if (!exists) {
+          const classification = classifyEmail(subject, bodyText);
+          emails.unshift({ id: nextId++, from, subject, body: bodyText || "(content)", date, classification, source: "gmail" });
+          importedCount++;
+        }
+      }
+      renderEmails();
+      showToast(`Fetched ${importedCount} new Gmail emails`);
+    } catch(e) { showToast("Gmail fetch error: "+e.message); }
+  }
+
+  // ========== AI ASSISTANT INTELLIGENCE (REPORTER MODE) ==========
+  function getEmailSummaryReport() {
+    const urgent = emails.filter(e => e.classification === "urgent");
+    const important = emails.filter(e => e.classification === "important");
+    const general = emails.filter(e => e.classification === "general");
+    const spam = emails.filter(e => e.classification === "spam");
+    let report = `📊 **Inbox Summary Report** — Total: ${emails.length}\n\n`;
+    report += `⚠️ Urgent: ${urgent.length}  |  ⭐ Important: ${important.length}  |  📄 General: ${general.length}  |  🚫 Spam: ${spam.length}\n\n`;
+    if (urgent.length) {
+      report += `🔥 **READ FIRST (URGENT):**\n`;
+      urgent.slice(0, 4).forEach(e => { report += `• ${e.subject} — from ${e.from.split('<')[0]}\n`; });
+      report += `\n`;
+    }
+    if (important.length) {
+      report += `📌 **Important to Review:**\n`;
+      important.slice(0, 3).forEach(e => { report += `• ${e.subject}\n`; });
+      report += `\n`;
+    }
+    if (spam.length) {
+      report += `🚫 **SAFE TO IGNORE (Spam/Promo):**\n`;
+      spam.slice(0, 3).forEach(e => { report += `• ${e.subject}\n`; });
+      report += `\n`;
+    }
+    if (urgent.length === 0 && important.length === 0 && spam.length === 0) {
+      report += `✅ No critical emails. Your inbox is under control!\n`;
+    }
+    report += `\n💡 Tip: Ask "What's urgent?" or "Summarize again" for more details.`;
+    return report;
+  }
+
+  function aiRespond(userQuery) {
+    const q = userQuery.toLowerCase();
+    if (q.includes("summarize") || q.includes("report") || q.includes("overview") || q.includes("inbox summary") || q.includes("tell me about my emails")) {
+      return getEmailSummaryReport();
+    }
+    if (q.includes("urgent") || q.includes("what should i read") || q.includes("first") || q.includes("priority")) {
+      const urgentList = emails.filter(e => e.classification === "urgent");
+      if (urgentList.length === 0) return "🎉 No urgent emails! Check your important ones or take a break.";
+      return "⚠️ **URGENT – Read these now:**\n" + urgentList.map(e => `• ${e.subject} (from ${e.from.split('<')[0]})`).join('\n') + "\n\nRecommendation: Reply or address these today.";
+    }
+    if (q.includes("ignore") || q.includes("spam") || q.includes("what to ignore") || q.includes("skip")) {
+      const spamList = emails.filter(e => e.classification === "spam");
+      if (spamList.length === 0) return "🧹 No spam or low-value emails! Your inbox is clean.";
+      return "🚫 **You can ignore these (spam / low priority):**\n" + spamList.map(e => `• ${e.subject}`).join('\n') + "\n\nFeel free to archive or delete them.";
+    }
+    if (q.includes("important") && !q.includes("urgent")) {
+      const imp = emails.filter(e => e.classification === "important");
+      if (imp.length === 0) return "No 'important' emails aside from urgent ones. You're good!";
+      return "⭐ **Important emails to review soon:**\n" + imp.map(e => `• ${e.subject} (${e.from})`).join('\n');
+    }
+    if (q.includes("total") || q.includes("how many") || q.includes("count")) {
+      return `📬 You have ${emails.length} total emails. ${emails.filter(e=>e.classification==='urgent').length} urgent, ${emails.filter(e=>e.classification==='important').length} important, ${emails.filter(e=>e.classification==='spam').length} spam.`;
+    }
+    if (q.includes("help") || q.includes("what can you do")) {
+      return "I'm your WorkSphere reporter & assistant. Try:\n• 'Summarize my inbox'\n• 'What to read first?'\n• 'What to ignore?'\n• 'Any urgent emails?'\n• 'Generate report'";
+    }
+    return getEmailSummaryReport() + "\n\n🤖 Need specific info? Try 'urgent', 'ignore', or 'help'.";
+  }
+
+  // Chat UI Helpers
+  function addMessage(role, text) {
+    const container = document.getElementById("chatMessages");
+    const div = document.createElement("div");
+    div.className = `message ${role}`;
+    const avatar = role === "ai" ? "🤖" : "👤";
+    div.innerHTML = `<div class="avatar">${avatar}</div><div class="bubble">${text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+  function showTyping() {
+    const container = document.getElementById("chatMessages");
+    const typingDiv = document.createElement("div");
+    typingDiv.className = "message ai";
+    typingDiv.id = "typingIndicator";
+    typingDiv.innerHTML = `<div class="avatar">🤖</div><div class="bubble"><div class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>`;
+    container.appendChild(typingDiv);
+    container.scrollTop = container.scrollHeight;
+  }
+  function removeTyping() { const el = document.getElementById("typingIndicator"); if(el) el.remove(); }
+  async function sendAssistantMessage() {
+    const input = document.getElementById("chatInput");
+    const query = input.value.trim();
+    if (!query) return;
+    addMessage("user", query);
+    input.value = "";
+    showTyping();
+    setTimeout(() => {
+      removeTyping();
+      const reply = aiRespond(query);
+      addMessage("ai", reply);
+    }, 400);
+  }
+  function generateFullReport() {
+    addMessage("user", "📋 Generate daily email report");
+    showTyping();
+    setTimeout(() => {
+      removeTyping();
+      const report = getEmailSummaryReport();
+      addMessage("ai", report);
+    }, 300);
+  }
+  function showToast(msg) { 
+    let t = document.getElementById("toastMsg"); 
+    if(!t){ t = document.createElement("div"); t.id = "toastMsg"; t.className = "toast-msg"; document.body.appendChild(t); } 
+    t.textContent = msg; t.style.opacity = "1"; 
+    setTimeout(() => t.style.opacity = "0", 2500);
+  }
+  function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, m=> m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+
+  // Event Listeners for Filters & Sort
+  function initUI() {
+    document.querySelectorAll(".filter-pill").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".filter-pill").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentFilter = btn.dataset.filter;
+        renderEmails();
+      });
+    });
+    document.getElementById("sortSelect").addEventListener("change", (e) => { currentSort = e.target.value; renderEmails(); });
+  }
+  
+  // Expose globals
+  window.initGmailConnection = initGmailConnection;
+  window.fetchGmailInbox = fetchGmailInbox;
+  window.deleteEmail = deleteEmail;
+  window.openEmailClient = openEmailClient;
+  window.sendAssistantMessage = sendAssistantMessage;
+  window.generateFullReport = generateFullReport;
+  
+  initUI();
+  renderEmails();
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>

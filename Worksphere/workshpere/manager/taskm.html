@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkSphere · Task Manager + HR Bridge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0b0d14;
+      --surface: #111520;
+      --surface2: #161b2e;
+      --border: rgba(255,255,255,0.07);
+      --blue: #4f8ef7;
+      --purple: #a78bfa;
+      --green: #34d399;
+      --orange: #fb923c;
+      --red: #f87171;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --dim: #374151;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Modern toggle between modes */
+    .mode-switch {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 200;
+      background: var(--surface2);
+      backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 6px;
+      display: flex;
+      gap: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .mode-btn {
+      padding: 10px 24px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: var(--blue);
+      color: white;
+      box-shadow: 0 0 12px rgba(79,142,247,0.4);
+    }
+
+    /* container shells */
+    .app-view {
+      display: none;
+    }
+    .app-view.active-view {
+      display: block;
+    }
+
+    /* ========== TASK MANAGER STYLES ========== */
+    .topbar{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:rgba(11,13,20,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);flex-shrink:0}
+    .tb-left{display:flex;align-items:center;gap:14px;margin-left:110px}
+    .back-btn{position:absolute;left:24px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:5px;color:var(--muted);text-decoration:none;font-size:.82rem;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.04);transition:all .2s;white-space:nowrap;z-index:21}
+    .back-btn:hover{color:var(--text);background:rgba(255,255,255,.08)}
+    .vdiv{width:1px;height:18px;background:var(--border)}
+    .mod-badge{display:flex;align-items:center;gap:9px}
+    .mod-ico{width:28px;height:28px;border-radius:7px;background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.2);display:flex;align-items:center;justify-content:center;font-size:.85rem}
+    .mod-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:#fff}
+    .mod-sub{font-size:.68rem;color:var(--muted)}
+    .tb-right{display:flex;align-items:center;gap:10px}
+    .add-task-btn{display:flex;align-items:center;gap:6px;background:var(--blue);border:none;color:#fff;padding:7px 14px;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s}
+    .add-task-btn:hover{background:#6a9ef9;transform:translateY(-1px)}
+    .ai-btn{display:flex;align-items:center;gap:6px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);color:#a78bfa;padding:7px 13px;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer}
+    .main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;overflow:hidden}
+    .summary-strip{display:flex;gap:12px;padding:16px 24px;border-bottom:1px solid var(--border);overflow-x:auto}
+    .sum-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 18px;min-width:130px}
+    .sum-num{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;line-height:1;color:var(--c,#fff)}
+    .sum-label{font-size:.72rem;color:var(--muted)}
+    .ring-card canvas{width:52px!important;height:52px!important}
+    .body-wrap{flex:1;display:flex;overflow:hidden}
+    .task-col{width:55%;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+    .task-toolbar{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap}
+    .tabs{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:3px}
+    .tab{padding:5px 13px;border-radius:6px;font-size:.75rem;cursor:pointer;background:transparent;color:var(--muted)}
+    .tab.active{background:var(--surface);color:var(--text)}
+    .filter-select{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:7px}
+    .sort-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:7px;cursor:pointer}
+    .task-list{flex:1;overflow-y:auto;padding:10px 14px}
+    .task-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+    .task-card.completed-card{opacity:.5}
+    .tc-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--dim);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+    .tc-check.done{background:var(--green);border-color:var(--green)}
+    .tc-check.done::after{content:'✓';font-size:.65rem;color:#fff}
+    .pri-tag{font-size:.62rem;padding:2px 7px;border-radius:4px;font-weight:600}
+    .pri-tag.critical{background:rgba(248,113,113,.15);color:#f87171}
+    .pri-tag.high{background:rgba(251,146,60,.12);color:#fb923c}
+    .analytics-col{flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+    .chart-card{background:var(--surface);border-radius:14px;padding:16px}
+    .win-card{background:linear-gradient(135deg,rgba(52,211,153,.08),rgba(79,142,247,.06));border-radius:14px;padding:16px}
+    .ai-insight{background:rgba(167,139,250,.06);border-radius:14px;padding:14px}
+    .overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+    .overlay.open{opacity:1;pointer-events:all}
+    .modal{background:#111520;border-radius:18px;padding:28px;max-width:500px;width:90%}
+    .toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+
+    /* ========== ENHANCED HR BRIDGE STYLES ========== */
+    .hr-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .hr-header { display: flex; justify-content: space-between; align-items: center; background: rgba(17,22,31,0.8); backdrop-filter: blur(10px); border-radius: 20px; padding: 12px 24px; margin-bottom: 24px; border: 1px solid var(--border); }
+    .brand h2 { font-size: 1.3rem; font-weight: 700; background: linear-gradient(135deg, #fff, #5b7eff); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .dashboard-grid { display: flex; gap: 24px; flex-wrap: wrap; }
+    .employees-panel { flex: 1; background: var(--surface); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; }
+    .tasks-panel { flex: 2; display: flex; flex-direction: column; gap: 24px; }
+    .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; }
+    .employee-list { max-height: 500px; overflow-y: auto; }
+    .employee-card { padding: 14px 18px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+    .employee-card:hover { background: rgba(91,126,255,0.08); }
+    .employee-card.active { background: rgba(91,126,255,0.2); border-left: 3px solid #5b7eff; }
+    .task-filters { padding: 12px 20px; display: flex; gap: 10px; border-bottom: 1px solid var(--border); }
+    .filter-chip { background: transparent; border: 1px solid var(--border); padding: 5px 14px; border-radius: 30px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; }
+    .filter-chip:hover { background: rgba(91,126,255,0.15); }
+    .filter-chip.active { background: #5b7eff; border-color: #5b7eff; color: white; }
+    .task-list-scroll { max-height: 360px; overflow-y: auto; padding: 12px; }
+    .task-item { background: #181e2a; margin: 8px 0; border-radius: 16px; padding: 14px; border: 1px solid var(--border); transition: all 0.2s; }
+    .task-item:hover { border-color: #5b7eff; }
+    .status-badge { font-size: 0.65rem; padding: 3px 10px; border-radius: 20px; }
+    .status-badge.pending { background: #facc1520; color: #facc15; }
+    .status-badge.approved { background: #2dd4bf20; color: #2dd4bf; }
+    .status-badge.rejected { background: #f8717120; color: #f87171; }
+    .action-btn { background: transparent; border: 1px solid var(--border); padding: 5px 14px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; transition: all 0.2s; }
+    .action-btn.approve { border-color: #2dd4bf80; color: #2dd4bf; }
+    .action-btn.approve:hover { background: #2dd4bf20; transform: scale(0.98); }
+    .action-btn.reject { border-color: #f8717180; color: #f87171; }
+    .action-btn.reject:hover { background: #f8717120; transform: scale(0.98); }
+    .action-btn.communicate { border-color: #5b7eff80; color: #7e9aff; }
+    .action-btn.communicate:hover { background: #5b7eff; color: white; transform: scale(0.98); }
+    .comm-panel { background: var(--surface); border-radius: 20px; border: 1px solid var(--border); }
+    .chat-messages { height: 200px; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .message { background: #1e2533; border-radius: 16px; padding: 8px 12px; max-width: 85%; font-size: 0.75rem; }
+    .message.hr { background: linear-gradient(135deg, #2a3246, #1f2838); align-self: flex-end; border-bottom-right-radius: 4px; }
+    .message.employee { background: #1a1f2c; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .msg-sender { font-weight: 600; font-size: 0.65rem; margin-bottom: 3px; color: #7e9aff; }
+    .comm-input-area { display: flex; padding: 12px 16px; gap: 12px; border-top: 1px solid var(--border); }
+    .comm-input { flex: 1; background: #0f141f; border: 1px solid var(--border); border-radius: 30px; padding: 10px 16px; color: white; outline: none; }
+    .comm-input:focus { border-color: #5b7eff; }
+    .send-btn { background: #5b7eff; border: none; border-radius: 30px; padding: 0 20px; font-weight: 600; cursor: pointer; color: white; transition: 0.2s; }
+    .send-btn:hover { transform: scale(0.98); filter: brightness(1.05); }
+    .btn-primary, .btn-secondary { border: none; padding: 8px 20px; border-radius: 40px; font-weight: 600; cursor: pointer; background: #5b7eff; color: white; transition: 0.2s; }
+    .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .btn-secondary { background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: rgba(91,126,255,0.2); border-color: #5b7eff; }
+    .modal-card { background: #111520; border-radius: 24px; padding: 28px; max-width: 500px; width: 90%; border: 1px solid var(--border); }
+    .modal-card input, .modal-card select, .modal-card textarea { width: 100%; background: #0b0f18; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; color: white; margin-top: 5px; font-family: inherit; outline: none; }
+    .modal-card input:focus, .modal-card select:focus, .modal-card textarea:focus { border-color: #5b7eff; }
+    .toast { background: #1f2a3e; border: 1px solid #5b7eff; padding: 10px 24px; border-radius: 40px; font-size: 0.8rem; opacity: 0; transition: 0.3s; }
+    .toast.show { opacity: 1; }
+    .empty-state { text-align: center; padding: 40px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<!-- mode toggle -->
+<div class="mode-switch">
+  <button class="mode-btn active" data-mode="task">✅ Task Manager</button>
+  <button class="mode-btn" data-mode="hr">👥 HR Bridge</button>
+</div>
+
+<!-- ==================== TASK MANAGER VIEW ==================== -->
+<div id="taskManagerView" class="app-view active-view">
+  <div class="topbar">
+    <div class="tb-left">
+      <a href="modulem.html" class="back-btn">← Go Back</a>
+      <div class="vdiv"></div>
+      <div class="mod-badge">
+        <div class="mod-ico">✅</div>
+        <div><div class="mod-name">Task Manager</div><div class="mod-sub">AI-Assisted · Personalized</div></div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <button class="ai-btn" id="task-cleanup-btn"><span class="ai-ico">✦</span> Clean up tasks</button>
+      <button class="ai-btn" id="task-prioritize-btn"><span class="ai-ico">⚡</span> Prioritize my day</button>
+      <button class="add-task-btn" id="task-add-btn">+ New Task</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="summary-strip" id="task-summary-strip"></div>
+    <div class="body-wrap">
+      <div class="task-col">
+        <div class="task-toolbar">
+          <div class="tabs" id="task-tabs"></div>
+          <select class="filter-select" id="proj-filter"><option value="">All Projects</option></select>
+          <select class="filter-select" id="pri-filter"><option value="">All Priorities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+          <div class="spacer"></div>
+          <button class="sort-btn" id="sort-btn">⇅ <span id="sort-label">Due date</span></button>
+        </div>
+        <div class="task-list" id="task-list"></div>
+      </div>
+      <div class="analytics-col">
+        <div class="focus-timer" id="focus-timer" style="background:rgba(79,142,247,.07);border-radius:14px;padding:14px;display:none"><div class="ft-title">🎯 Focus Session</div><div class="ft-task" id="ft-task-name">—</div><div class="ft-clock" id="ft-clock">00:00</div><div class="ft-actions"><button class="ft-btn stop" id="stop-focus-btn">✕ Stop</button><button class="ft-btn done" id="focus-done-btn">✓ Mark Done</button></div></div>
+        <div class="win-card" id="win-card"><div class="wt">🏆 Weekly Win</div><p id="win-text">Loading...</p></div>
+        <div class="ai-insight" id="ai-insight"><div class="ai-hdr">✦ AI Insight</div><span id="ai-insight-text">Click Prioritize my day</span></div>
+        <div class="chart-card"><div class="section-title">Daily completion</div><canvas id="bar-chart"></canvas></div>
+        <div class="chart-card"><div class="section-title">Tasks by priority</div><canvas id="doughnut-chart"></canvas></div>
+        <div class="chart-card"><div class="section-title">Project progress</div><div id="proj-progress"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast-wrap" id="toast-wrap"></div>
+  <div class="overlay" id="taskModal"><div class="modal"><div class="modal-title">New Task</div><div class="mfield"><label>Title</label><input id="m-title"></div><div class="mfield"><label>Description</label><textarea id="m-desc"></textarea></div><div class="mrow"><div class="mfield"><label>Project</label><input id="m-proj"></div><div class="mfield"><label>Priority</label><select id="m-pri"><option value="critical">Critical</option><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div></div><div class="mfield"><label>Due date</label><input type="date" id="m-due"></div><div class="modal-actions"><button class="m-btn gho" id="closeModalBtn">Cancel</button><button class="m-btn pri" id="confirmAddBtn">Add Task</button></div></div></div>
+</div>
+
+<!-- ==================== ENHANCED HR BRIDGE VIEW ==================== -->
+<div id="hrBridgeView" class="app-view">
+  <div class="hr-container">
+    <div class="hr-header">
+      <div class="brand"><h2>👥 HR Bridge · Assign · Approve · Communicate</h2></div>
+      <div><button class="btn-primary" id="hrAssignBtn">➕ Assign New Task</button></div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="employees-panel">
+        <div class="panel-header">👩‍💼 Team Members <span id="empCount">0</span></div>
+        <div id="employeeList" class="employee-list"></div>
+      </div>
+      <div class="tasks-panel">
+        <div class="tasks-container">
+          <div class="panel-header">📋 Tasks & Approvals</div>
+          <div class="task-filters" id="hrFilterContainer"></div>
+          <div id="hrTaskList" class="task-list-scroll"></div>
+        </div>
+        <div class="comm-panel">
+          <div class="comm-header">💬 Communication · <span id="activeEmployee">Select employee</span></div>
+          <div id="chatArea" class="chat-messages"></div>
+          <div class="comm-input-area">
+            <input id="messageInput" class="comm-input" placeholder="Type a message... (feedback, reminders, approvals)">
+            <button id="sendMsgBtn" class="send-btn">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="hrModal" class="overlay">
+    <div class="modal-card">
+      <h3>✍️ Assign New Task</h3>
+      <label>Employee *</label>
+      <select id="assignEmpId"></select>
+      <label>Task Title *</label>
+      <input id="hrTaskTitle" placeholder="e.g., Review Q3 compliance report">
+      <label>Description</label>
+      <textarea id="hrTaskDesc" rows="2" placeholder="Detailed instructions, expectations, deadlines..."></textarea>
+      <label>Priority</label>
+      <select id="hrPriority">
+        <option value="high">🔴 High Priority</option>
+        <option value="medium">🟡 Medium Priority</option>
+        <option value="low">🟢 Low Priority</option>
+      </select>
+      <label>Due Date</label>
+      <input type="date" id="hrDueDate">
+      <div class="modal-actions">
+        <button class="btn-secondary" id="closeHrModal">Cancel</button>
+        <button class="btn-primary" id="confirmHrAssign">Assign Task</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --------------------------------------------------------------
+  // 1) TASK MANAGER (fully functional)
+  // --------------------------------------------------------------
+  const todayDate = new Date();
+  const dateOffset = (offset = 0) => { const d = new Date(todayDate); d.setDate(d.getDate() + offset); return d.toISOString().split('T')[0]; };
+  let fmTasks = [
+    {id:1,title:'Review Q2 design specs',desc:'Figma feedback',proj:'WorkSphere v2',owner:'John Doe',pri:'high',status:'pending',due:dateOffset(0),est:2,created:dateOffset(-3),completed_at:null,dep:null},
+    {id:2,title:'Fix auth bug',desc:'JWT refresh',proj:'WorkSphere v2',owner:'John Doe',pri:'critical',status:'pending',due:dateOffset(-1),est:3,created:dateOffset(-5),completed_at:null,dep:null},
+    {id:3,title:'Write deployment runbook',desc:'steps',proj:'DevOps',owner:'John Doe',pri:'medium',status:'completed',due:dateOffset(-2),est:1.5,completed_at:dateOffset(-1)},
+    {id:4,title:'Intern interviews',desc:'panel',proj:'Hiring',owner:'John Doe',pri:'high',status:'pending',due:dateOffset(1),est:2},
+    {id:5,title:'Update API docs',desc:'Swagger',proj:'WorkSphere v2',pri:'medium',status:'pending',due:dateOffset(3),est:1,dep:2},
+    {id:6,title:'Monthly retro',desc:'facilitate',proj:'Team Ops',status:'completed',due:dateOffset(-3)},
+    {id:7,title:'Migrate DB schema',desc:'staging',proj:'DevOps',pri:'critical',status:'pending',due:dateOffset(-2),est:4},
+    {id:8,title:'Q2 OKR slides',desc:'all-hands',proj:'Team Ops',pri:'low',status:'pending',due:dateOffset(6),est:2},
+    {id:9,title:'Monitoring alerts',desc:'Grafana',proj:'DevOps',pri:'high',status:'completed',due:dateOffset(0),completed_at:dateOffset(0)},
+    {id:10,title:'Product roadmap email',desc:'stakeholders',proj:'WorkSphere v2',pri:'medium',status:'pending',due:dateOffset(2),est:1,dep:8}
+  ];
+  let nextTaskId = 11, currentTab = 'today', sortMode = 'due', focusTaskId = null, focusInterval = null, focusSeconds = 0, aiPriorityOrder = null;
+  function isOverdue(t) { return t.status !== 'completed' && t.due < dateOffset(0); }
+  function getFilteredTasks() {
+    let list = [...fmTasks];
+    if (currentTab === 'today') list = list.filter(t => t.due === dateOffset(0) || (t.status==='pending' && isOverdue(t)));
+    if (currentTab === 'week') list = list.filter(t => { const dt = new Date(t.due); const start = new Date(todayDate); start.setDate(todayDate.getDate() - todayDate.getDay()); const end = new Date(start); end.setDate(start.getDate()+6); return dt >= start && dt <= end; });
+    if (currentTab === 'overdue') list = list.filter(t => isOverdue(t));
+    const proj = document.getElementById('proj-filter')?.value; if(proj) list = list.filter(t=>t.proj===proj);
+    const pri = document.getElementById('pri-filter')?.value; if(pri) list = list.filter(t=>t.pri===pri);
+    if (aiPriorityOrder) list.sort((a,b)=> (aiPriorityOrder.indexOf(a.id)-aiPriorityOrder.indexOf(b.id)));
+    else if(sortMode==='due') list.sort((a,b)=> a.due.localeCompare(b.due));
+    return list;
+  }
+  function renderTasks() {
+    const list = getFilteredTasks(); const el = document.getElementById('task-list');
+    if(!list.length){ el.innerHTML='<div class="empty-state">🎉 All caught up!</div>'; updateSummary(); updateAnalytics(); return; }
+    el.innerHTML = list.map(t => `<div class="task-card ${t.status==='completed'?'completed-card':''}" onclick="editTask(${t.id})"><div class="tc-top"><div class="tc-check ${t.status==='completed'?'done':''}" onclick="event.stopPropagation();toggleTask(${t.id})"></div><div class="tc-body"><div class="tc-title ${t.status==='completed'?'crossed':''}">${t.title}</div><div class="tc-desc">${t.desc||''}</div><div class="tc-meta"><span class="pri-tag ${t.pri}">${t.pri}</span><span class="proj-tag">${t.proj}</span><span class="due-tag">${t.due}</span></div></div></div><div class="tc-actions"><button class="tc-btn" onclick="event.stopPropagation();deleteTask(${t.id})">🗑</button></div></div>`).join('');
+    updateSummary(); updateAnalytics(); populateFilters();
+  }
+  function updateSummary(){
+    const total = fmTasks.length, done = fmTasks.filter(t=>t.status==='completed').length, overdue = fmTasks.filter(isOverdue).length, pending = fmTasks.filter(t=>t.status==='pending').length, pct = total?Math.round(done/total*100):0, remHours = fmTasks.filter(t=>t.status==='pending').reduce((s,t)=>s+(t.est||0),0);
+    const strip = document.getElementById('task-summary-strip'); if(strip) strip.innerHTML = `<div class="sum-card" style="--c:var(--blue)"><div class="sum-num">${total}</div><div class="sum-label">Total tasks</div></div><div class="sum-card" style="--c:var(--green)"><div class="sum-num">${done}</div><div class="sum-label">Completed</div></div><div class="sum-card" style="--c:var(--red)"><div class="sum-num">${overdue}</div><div class="sum-label">Overdue</div></div><div class="sum-card" style="--c:var(--orange)"><div class="sum-num">${pending}</div><div class="sum-label">Pending</div></div><div class="sum-card ring-card"><canvas id="ring-chart" width="52" height="52"></canvas><div class="ring-info"><div class="sum-num">${pct}%</div><div class="sum-label">Done rate</div></div></div><div class="sum-card" style="--c:var(--purple)"><div class="sum-num">${remHours}h</div><div class="sum-label">Remaining</div></div>`;
+    const rcCanvas = document.getElementById('ring-chart'); if(rcCanvas && window.Chart){ if(rcCanvas._chart) rcCanvas._chart.destroy(); rcCanvas._chart = new Chart(rcCanvas, {type:'doughnut',data:{datasets:[{data:[done,pending,overdue],backgroundColor:['#34d399','#4f8ef7','#f87171'],cutout:'78%'}]},options:{plugins:{legend:{display:false}}}}); }
+    const winProj = Object.entries(fmTasks.filter(t=>t.status==='completed').reduce((acc,t)=>{acc[t.proj]=(acc[t.proj]||0)+1; return acc;},{})).find(([p,c])=>c === fmTasks.filter(t=>t.proj===p).length); document.getElementById('win-text').innerText = winProj ? `Finished all "${winProj[0]}" tasks! 🎉` : `${done} tasks done so far. Keep going!`;
+  }
+  let barChartInst, doughnutInst;
+  function updateAnalytics(){
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; const counts = days.map((_,i)=>{ const d=new Date(todayDate); d.setDate(todayDate.getDate()-todayDate.getDay()+1+i); return fmTasks.filter(t=>t.completed_at===d.toISOString().split('T')[0]).length; });
+    const bc = document.getElementById('bar-chart'); if(barChartInst) barChartInst.destroy(); if(bc) barChartInst = new Chart(bc, {type:'bar',data:{labels:days,datasets:[{data:counts,backgroundColor:'#4f8ef7'}]}});
+    const pCounts = ['critical','high','medium','low'].map(p=>fmTasks.filter(t=>t.pri===p&&t.status!=='completed').length);
+    const dc = document.getElementById('doughnut-chart'); if(doughnutInst) doughnutInst.destroy(); if(dc) doughnutInst = new Chart(dc,{type:'doughnut',data:{labels:['Critical','High','Medium','Low'],datasets:[{data:pCounts,backgroundColor:['#f87171','#fb923c','#4f8ef7','#6b7280']}]}});
+    const projs = [...new Set(fmTasks.map(t=>t.proj))]; document.getElementById('proj-progress').innerHTML = projs.map(p=>{ const total = fmTasks.filter(t=>t.proj===p).length, done = fmTasks.filter(t=>t.proj===p&&t.status==='completed').length, pct = total?Math.round(done/total*100):0; return `<div>${p} ${done}/${total}<div style="background:#374151;border-radius:10px;height:6px"><div style="width:${pct}%;background:#4f8ef7;height:6px;border-radius:10px"></div></div></div>`; }).join('');
+  }
+  function populateFilters(){ const projects = [...new Set(fmTasks.map(t=>t.proj))]; const pf = document.getElementById('proj-filter'); if(pf) pf.innerHTML = '<option value="">All Projects</option>'+projects.map(p=>`<option value="${p}">${p}</option>`).join(''); }
+  function toggleTask(id){ const t = fmTasks.find(x=>x.id===id); if(t){ t.status = t.status==='completed'?'pending':'completed'; t.completed_at = t.status==='completed'?dateOffset(0):null; renderTasks(); } }
+  function deleteTask(id){ fmTasks = fmTasks.filter(t=>t.id!==id); renderTasks(); }
+  window.editTask = (id)=>{ alert('Edit feature: inline editing would open modal.'); };
+  window.toggleTask = toggleTask; window.deleteTask = deleteTask;
+  document.getElementById('task-add-btn')?.addEventListener('click',()=>{ const title = prompt('Task title'); if(title) { fmTasks.push({id:nextTaskId++, title, desc:'', proj:'General', pri:'medium', status:'pending', due:dateOffset(3), est:0, created:dateOffset(0), completed_at:null}); renderTasks(); } });
+  document.getElementById('task-prioritize-btn')?.addEventListener('click',()=>{ toastMsg('✨ AI Prioritize demo (simulated)'); aiPriorityOrder = fmTasks.filter(t=>t.status==='pending').map(t=>t.id); renderTasks(); });
+  document.getElementById('task-cleanup-btn')?.addEventListener('click',()=>{ toastMsg('🧹 Cleanup: marked oldest pending as completed'); const old = fmTasks.find(t=>t.status==='pending' && t.due<dateOffset(0)); if(old) old.status='completed'; renderTasks(); });
+  function toastMsg(msg){ const wrap=document.getElementById('toast-wrap'); const t = document.createElement('div'); t.className='toast show'; t.innerText=msg; wrap.appendChild(t); setTimeout(()=>t.remove(),2000); }
+  renderTasks();
+
+  // --------------------------------------------------------------
+  // 2) ENHANCED HR BRIDGE MODULE
+  // --------------------------------------------------------------
+  const employees = [
+    { id: 101, name: "Emma Chen", role: "HR Generalist" },
+    { id: 102, name: "James Rivera", role: "Recruitment Lead" },
+    { id: 103, name: "Sophia Kapoor", role: "Payroll Specialist" },
+    { id: 104, name: "Liam O'Connor", role: "Benefits Coordinator" },
+    { id: 105, name: "Maya Johnson", role: "L&D Associate" }
+  ];
+
+  let hrTasks = [
+    { id: 1, title: "Update employee handbook", description: "Include new remote work policy", assignedTo: 101, status: "approved", priority: "high", dueDate: "2026-05-05" },
+    { id: 2, title: "Exit interview summary", description: "Summarize last 3 exit interviews", assignedTo: 102, status: "pending", priority: "medium", dueDate: "2026-04-30" },
+    { id: 3, title: "Prepare payroll report", description: "Monthly payroll for April", assignedTo: 103, status: "approved", priority: "high", dueDate: "2026-05-02" },
+    { id: 4, title: "Team building event", description: "Plan May team event", assignedTo: 105, status: "pending", priority: "low", dueDate: "2026-05-10" }
+  ];
+
+  let chatMessages = {
+    101: [{ sender: "employee", text: "Hi, need guidance on handbook deadline.", time: "10:32 AM" }],
+    102: [{ sender: "hr", text: "Please prioritize exit summary by EOD tomorrow.", time: "Yesterday" }],
+    103: [{ sender: "employee", text: "Payroll report almost ready.", time: "9:15 AM" }],
+    104: [{ sender: "hr", text: "Welcome! Let me know if you need help.", time: "Apr 26" }],
+    105: [{ sender: "employee", text: "Can you review event budget proposal?", time: "11:20 AM" }]
+  };
+
+  employees.forEach(emp => {
+    if (!chatMessages[emp.id]) {
+      chatMessages[emp.id] = [{ sender: "hr", text: "👋 Welcome! Message HR anytime.", time: "Just now" }];
+    }
+  });
+
+  let selectedEmpId = 101, hrFilter = "all", nextHrId = 5;
+
+  function renderEmployeeList() {
+    const container = document.getElementById('employeeList');
+    if (!container) return;
+    document.getElementById('empCount').textContent = employees.length;
+    container.innerHTML = employees.map(emp => `
+      <div class="employee-card ${selectedEmpId === emp.id ? 'active' : ''}" data-id="${emp.id}">
+        <div><strong>${emp.name}</strong><br><small>${emp.role}</small></div>
+        <div>💬 ${chatMessages[emp.id]?.length || 0}</div>
+      </div>
+    `).join('');
+    document.querySelectorAll('.employee-card').forEach(card => {
+      card.addEventListener('click', () => {
+        selectedEmpId = parseInt(card.dataset.id);
+        renderEmployeeList();
+        renderHrTasks();
+        renderChat();
+        document.getElementById('activeEmployee').innerText = employees.find(e => e.id === selectedEmpId)?.name;
+      });
+    });
+  }
+
+  function renderHrTasks() {
+    let filtered = hrTasks.filter(t => t.assignedTo === selectedEmpId);
+    if (hrFilter === 'pending') filtered = filtered.filter(t => t.status === 'pending');
+    if (hrFilter === 'approved') filtered = filtered.filter(t => t.status === 'approved');
+    const container = document.getElementById('hrTaskList');
+    if (!filtered.length) {
+      container.innerHTML = '<div class="empty-state">📭 No tasks for this employee</div>';
+      return;
+    }
+    container.innerHTML = filtered.map(t => `
+      <div class="task-item">
+        <div><strong>📌 ${t.title}</strong> <span class="status-badge ${t.status}">${t.status}</span></div>
+        <div class="task-desc">${t.description}</div>
+        <div class="task-meta">⚡ ${t.priority} | 📅 ${t.dueDate}</div>
+        <div class="task-actions">
+          ${t.status === 'pending' ? `
+            <button class="action-btn approve" data-id="${t.id}">✓ Approve</button>
+            <button class="action-btn reject" data-id="${t.id}">✗ Reject</button>
+          ` : ''}
+          <button class="action-btn communicate" data-title="${t.title}">💬 Discuss</button>
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.action-btn.approve').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.dataset.id);
+        const task = hrTasks.find(x => x.id === id);
+        if (task && task.status === 'pending') {
+          task.status = 'approved';
+          chatMessages[task.assignedTo].push({ sender: "hr", text: `✅ Task "${task.title}" has been APPROVED! Great work.`, time: new Date().toLocaleTimeString() });
+          renderHrTasks();
+          renderChat();
+          toastMsgHR('✓ Task approved');
+        }
+      });
+    });
+    document.querySelectorAll('.action-btn.reject').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.dataset.id);
+        const task = hrTasks.find(x => x.id === id);
+        if (task && task.status === 'pending') {
+          task.status = 'rejected';
+          chatMessages[task.assignedTo].push({ sender: "hr", text: `❌ Task "${task.title}" needs revisions. Please check requirements.`, time: new Date().toLocaleTimeString() });
+          renderHrTasks();
+          renderChat();
+          toastMsgHR('⚠️ Task rejected');
+        }
+      });
+    });
+    document.querySelectorAll('.action-btn.communicate').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('messageInput').value = `Regarding: "${btn.dataset.title}" – Could you please provide an update?`;
+        document.getElementById('messageInput').focus();
+      });
+    });
+  }
+
+  function renderChat() {
+    const msgs = chatMessages[selectedEmpId] || [];
+    const emp = employees.find(e => e.id === selectedEmpId);
+    const container = document.getElementById('chatArea');
+    if (!msgs.length) {
+      container.innerHTML = '<div class="message employee">💬 No messages yet. Start a conversation.</div>';
+      return;
+    }
+    container.innerHTML = msgs.map(m => `
+      <div class="message ${m.sender === 'hr' ? 'hr' : 'employee'}">
+        <div class="msg-sender">${m.sender === 'hr' ? '👑 HR Team' : emp?.name}</div>
+        <div>${m.text}</div>
+        <div style="font-size:0.6rem; opacity:0.6;">${m.time}</div>
+      </div>
+    `).join('');
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function sendHRMessage() {
+    const input = document.getElementById('messageInput');
+    const txt = input.value.trim();
+    if (!txt) return;
+    chatMessages[selectedEmpId].push({ sender: "hr", text: txt, time: new Date().toLocaleTimeString() });
+    input.value = '';
+    renderChat();
+    toastMsgHR('📨 Message sent');
+  }
+
+  function assignHrTask(empId, title, desc, priority, dueDate) {
+    if (!title.trim()) { toastMsgHR('Task title required'); return false; }
+    hrTasks.push({
+      id: nextHrId++,
+      title: title.trim(),
+      description: desc.trim() || "No description",
+      assignedTo: empId,
+      status: "pending",
+      priority: priority,
+      dueDate: dueDate
+    });
+    chatMessages[empId].push({ sender: "hr", text: `📋 New task assigned: "${title}". Priority: ${priority}, Due: ${dueDate || 'soon'}.`, time: new Date().toLocaleTimeString() });
+    renderHrTasks();
+    renderEmployeeList();
+    toastMsgHR('✓ Task assigned');
+    return true;
+  }
+
+  function toastMsgHR(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast show';
+    t.innerText = msg;
+    t.style.position = 'fixed';
+    t.style.bottom = '80px';
+    t.style.left = '50%';
+    t.style.transform = 'translateX(-50%)';
+    t.style.background = '#1f2a3e';
+    t.style.zIndex = '999';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2000);
+  }
+
+  // Initialize HR module
+  document.getElementById('hrAssignBtn')?.addEventListener('click', () => {
+    const modal = document.getElementById('hrModal');
+    if (modal) modal.classList.add('open');
+    document.getElementById('assignEmpId').innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    document.getElementById('hrDueDate').value = new Date().toISOString().slice(0, 10);
+  });
+  document.getElementById('closeHrModal')?.addEventListener('click', () => document.getElementById('hrModal')?.classList.remove('open'));
+  document.getElementById('confirmHrAssign')?.addEventListener('click', () => {
+    const empId = parseInt(document.getElementById('assignEmpId').value);
+    const title = document.getElementById('hrTaskTitle').value;
+    const desc = document.getElementById('hrTaskDesc').value;
+    const priority = document.getElementById('hrPriority').value;
+    const dueDate = document.getElementById('hrDueDate').value;
+    if (assignHrTask(empId, title, desc, priority, dueDate)) {
+      document.getElementById('hrModal')?.classList.remove('open');
+      document.getElementById('hrTaskTitle').value = '';
+      document.getElementById('hrTaskDesc').value = '';
+    }
+  });
+  document.getElementById('sendMsgBtn')?.addEventListener('click', sendHRMessage);
+  document.getElementById('messageInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendHRMessage(); });
+  
+  const filterContainer = document.getElementById('hrFilterContainer');
+  if (filterContainer) {
+    filterContainer.innerHTML = `<button class="filter-chip active" data-filter="all">All</button><button class="filter-chip" data-filter="pending">Pending</button><button class="filter-chip" data-filter="approved">Approved</button>`;
+    document.querySelectorAll('#hrFilterContainer .filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#hrFilterContainer .filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        hrFilter = chip.dataset.filter;
+        renderHrTasks();
+      });
+    });
+  }
+  
+  renderEmployeeList();
+  renderHrTasks();
+  renderChat();
+  document.getElementById('activeEmployee').innerText = employees.find(e => e.id === selectedEmpId)?.name;
+
+  // Handle modal outside click
+  document.getElementById('hrModal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('hrModal')) document.getElementById('hrModal').classList.remove('open');
+  });
+
+  // --------------------------------------------------------------
+  // 3) VIEW TOGGLING
+  // --------------------------------------------------------------
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.mode;
+      document.getElementById('taskManagerView').classList.toggle('active-view', mode === 'task');
+      document.getElementById('hrBridgeView').classList.toggle('active-view', mode === 'hr');
+      if (mode === 'task') { renderTasks(); updateAnalytics(); }
+      else { renderEmployeeList(); renderHrTasks(); renderChat(); }
+    });
+  });
+
+  document.getElementById('stop-focus-btn')?.addEventListener('click', () => { if (focusInterval) clearInterval(focusInterval); document.getElementById('focus-timer').style.display = 'none'; });
+  document.getElementById('focus-done-btn')?.addEventListener('click', () => { if (focusTaskId) toggleTask(focusTaskId); document.getElementById('focus-timer').style.display = 'none'; if (focusInterval) clearInterval(focusInterval); });
+  window.toast = toastMsg;
+</script>
+</body>
+</html>

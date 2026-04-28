@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>WorkSphere | Global Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --blue: #4f8ef7;
+    --purple: #a78bfa;
+    --green: #34d399;
+    --bg-deep: #05070e;
+  }
+
+  body {
+    background: var(--bg-deep);
+    font-family: 'DM Sans', sans-serif;
+    color: #eef2ff;
+    overflow-x: hidden;
+  }
+
+  /* SCROLL CONTAINER - OPTIMIZED LENGTH */
+  #scroll-container {
+    height: 165vh;
+    position: relative;
+  }
+
+  #sticky-scene {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 2;
+  }
+
+  /* Ambient glows */
+  .bg-glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    filter: blur(80px);
+  }
+  .glow-1 {
+    width: 600px; height: 600px;
+    top: -200px; left: -200px;
+    background: radial-gradient(circle, rgba(79,142,247,0.1) 0%, transparent 70%);
+  }
+  .glow-2 {
+    width: 550px; height: 550px;
+    bottom: -150px; right: -150px;
+    background: radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%);
+  }
+  .glow-3 {
+    width: 350px; height: 350px;
+    bottom: 20%; left: 10%;
+    background: radial-gradient(circle, rgba(52,211,153,0.06) 0%, transparent 70%);
+  }
+
+  /* hero content */
+  #hero-content {
+    position: absolute;
+    z-index: 20;
+    text-align: center;
+    max-width: 680px;
+    padding: 0 20px;
+    left: 50%;
+    top: 40%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    opacity: 0;
+    transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    pointer-events: none;
+    overflow-wrap: break-word;
+  }
+  #hero-content.visible { opacity: 1; }
+  #hero-content * { pointer-events: auto; }
+
+  .badge {
+    background: rgba(79, 142, 247, 0.08);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(79, 142, 247, 0.2);
+    border-radius: 100px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 20px;
+    margin-bottom: 32px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #90b4ff;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: #4f8ef7;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4f8ef7;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1);}
+    50% { opacity: 1; transform: scale(1.2);}
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 18px;
+    color: white;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .grad {
+    background: linear-gradient(125deg, #4f8ef7, #a78bfa, #34d399);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub {
+    color: #9ca3af;
+    font-size: 0.98rem;
+    line-height: 1.7;
+    margin-bottom: 42px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: 350;
+  }
+
+  @media (max-width: 900px) {
+    #hero-content { top: 44%; padding: 0 16px; }
+    h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); margin-bottom: 16px; }
+    .sub { font-size: 0.94rem; max-width: 100%; margin-bottom: 32px; }
+    .btns { gap: 12px; margin-top: 20px; }
+  }
+
+  @media (max-width: 620px) {
+    #hero-content { top: 42%; }
+    h1 { font-size: clamp(2rem, 7.5vw, 3rem); line-height: 1.12; }
+    .sub { font-size: 0.9rem; }
+  }
+
+  .btns {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 32px;
+    padding-bottom: 10px;
+  }
+  .btn-primary {
+    background: var(--blue);
+    border: none;
+    padding: 14px 36px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(79,142,247,0.25);
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-primary:hover {
+    background: #6a9ef9;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(79,142,247,0.4);
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 14px 36px;
+    border-radius: 40px;
+    color: #eef2ff;
+    font-weight: 500;
+    transition: all 0.25s;
+    text-decoration: none;
+    backdrop-filter: blur(4px);
+  }
+  .btn-ghost:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  /* stats bar */
+  #stats-bar {
+    position: absolute;
+    bottom: 70px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 64px;
+    z-index: 15;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+  }
+  .stat {
+    text-align: center;
+    background: rgba(8, 12, 22, 0.5);
+    backdrop-filter: blur(8px);
+    padding: 8px 22px;
+    border-radius: 60px;
+    border: 0.5px solid rgba(79,142,247,0.2);
+  }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, #cbd5ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: #8b96b0;
+    letter-spacing: 0.05em;
+  }
+
+  #scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 18;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255,255,255,0.3);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    transition: opacity 0.4s;
+  }
+  .scroll-arrow {
+    width: 1px;
+    height: 32px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.2), rgba(255,255,255,0.6));
+    animation: fadeMove 2s infinite;
+  }
+  @keyframes fadeMove {
+    0% { opacity: 0.2; transform: scaleY(0.8);}
+    50% { opacity: 0.8; transform: scaleY(1.2);}
+    100% { opacity: 0.2; transform: scaleY(0.8);}
+  }
+
+  /* Logo & minimal nav */
+  #logo {
+    position: fixed;
+    top: 28px;
+    left: 36px;
+    z-index: 100;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(5,7,14,0.5);
+    backdrop-filter: blur(8px);
+    padding: 8px 18px;
+    border-radius: 60px;
+    border: 0.5px solid rgba(255,255,255,0.05);
+  }
+  .logo-icon {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #nav {
+    position: fixed;
+    top: 28px;
+    right: 36px;
+    z-index: 100;
+  }
+  .nav-cta {
+    background: rgba(79, 142, 247, 0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(79,142,247,0.25);
+    color: var(--blue);
+    padding: 8px 22px;
+    border-radius: 40px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: 0.2s;
+  }
+  .nav-cta:hover {
+    background: rgba(79,142,247,0.25);
+  }
+
+  #scroll-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--blue), var(--purple), var(--green));
+    width: 0%;
+    z-index: 200;
+    transition: width 0.08s linear;
+  }
+
+  #connection-count {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 18;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    padding: 5px 18px;
+    border-radius: 40px;
+    color: #cbd5ff;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    font-family: 'DM Sans', monospace;
+  }
+
+  @media (max-width: 720px) {
+    #stats-bar { gap: 24px; bottom: 50px; }
+    .stat { padding: 4px 14px; }
+    .stat-num { font-size: 1.2rem; }
+    #connection-count { font-size: 0.6rem; white-space: nowrap; top: 70px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="scroll-progress"></div>
+<div id="logo">
+  <div class="logo-icon"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2.5" fill="white"/><path d="M7 1.5C7 1.5 3 4 3 7C3 10 7 12.5 7 12.5" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/><path d="M7 1.5C7 1.5 11 4 11 7C11 10 7 12.5 7 12.5" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/><line x1="1.5" y1="7" x2="12.5" y2="7" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/></svg></div>
+  WorkSphere
+</div>
+<nav id="nav">
+  <a href="login.html" class="nav-cta">Log in →</a>
+</nav>
+
+<div id="scroll-container">
+  <div id="sticky-scene">
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div class="bg-glow glow-3"></div>
+    <canvas id="globe-canvas"></canvas>
+    <div id="connection-count">🌐 activating neural mesh</div>
+    <div id="hero-content">
+      <div class="badge"><div class="badge-dot"></div> Intelligent workspace · globally synchronized</div>
+      <h1>Your team's intelligence,<br><span class="grad">unified in orbit</span></h1>
+      <p class="sub">WorkSphere fuses AI analytics, global sync, and real-time insights. Experience the new standard.</p>
+      <div class="btns"><a href="sigup.html" class="btn-primary">Get started →</a><a href="#" class="btn-ghost">Discover</a></div>
+    </div>
+    <div id="stats-bar">
+      <div class="stat"><div class="stat-num">180+</div><div class="stat-label">Ecosystems</div></div>
+      <div class="stat"><div class="stat-num">21K</div><div class="stat-label">Connected teams</div></div>
+      <div class="stat"><div class="stat-num">99.2%</div><div class="stat-label">Resilience</div></div>
+    </div>
+    <div id="scroll-hint"><span>scroll to expand</span><div class="scroll-arrow"></div></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  // ========== MANY DOTS (dense constellation) + MODERATE THREADS (balanced, not messy) ==========
+  // 12 major hubs for a robust but clean connection web
+  const hubCities = [
+    { name: 'New York', lat: 40.7, lon: -74.0 },
+    { name: 'London', lat: 51.5, lon: -0.1 },
+    { name: 'Tokyo', lat: 35.7, lon: 139.7 },
+    { name: 'Singapore', lat: 1.3, lon: 103.8 },
+    { name: 'São Paulo', lat: -23.5, lon: -46.6 },
+    { name: 'Dubai', lat: 25.2, lon: 55.3 },
+    { name: 'Sydney', lat: -33.9, lon: 151.2 },
+    { name: 'Berlin', lat: 52.5, lon: 13.4 },
+    { name: 'Mumbai', lat: 19.1, lon: 72.9 },
+    { name: 'San Francisco', lat: 37.8, lon: -122.4 },
+    { name: 'Cairo', lat: 30.0, lon: 31.2 },
+    { name: 'Seoul', lat: 37.6, lon: 127.0 }
+  ];
+  
+  // ========== MODERATE, WELL-DISTRIBUTED CONNECTIONS (20 threads - visually pleasing, not messy) ==========
+  const connections = [
+    [0, 1],   // NYC - London
+    [0, 4],   // NYC - São Paulo
+    [0, 9],   // NYC - San Francisco
+    [1, 7],   // London - Berlin
+    [1, 5],   // London - Dubai
+    [1, 10],  // London - Cairo
+    [2, 3],   // Tokyo - Singapore
+    [2, 8],   // Tokyo - Mumbai
+    [2, 11],  // Tokyo - Seoul
+    [3, 5],   // Singapore - Dubai
+    [3, 6],   // Singapore - Sydney
+    [3, 8],   // Singapore - Mumbai
+    [4, 5],   // São Paulo - Dubai
+    [4, 10],  // São Paulo - Cairo
+    [5, 10],  // Dubai - Cairo
+    [6, 3],   // Sydney - Singapore
+    [6, 2],   // Sydney - Tokyo
+    [7, 1],   // Berlin - London
+    [8, 2],   // Mumbai - Tokyo
+    [9, 0],   // SF - NYC
+    [10, 5],  // Cairo - Dubai
+    [11, 2]   // Seoul - Tokyo
+  ];
+  
+  // Deduplicate and clean
+  const uniqueConnections = [];
+  const connKeySet = new Set();
+  connections.forEach(([a,b]) => {
+    const key = `${Math.min(a,b)}-${Math.max(a,b)}`;
+    if (!connKeySet.has(key)) {
+      connKeySet.add(key);
+      uniqueConnections.push([a,b]);
+    }
+  });
+  const finalConnections = uniqueConnections;
+  console.log(`✨ ${finalConnections.length} refined global threads`);
+
+  function latLonToVec3(lat, lon, r) {
+    const phi = (90 - lat) * Math.PI / 180;
+    const theta = (lon + 180) * Math.PI / 180;
+    return new THREE.Vector3(-r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
+  }
+  
+  // ========== THREE.JS SETUP ==========
+  const canvas = document.getElementById('globe-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+  camera.position.set(0, 0.1, 2.8);
+  
+  function resize() {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  
+  const GLOBE_R = 1.0;
+  
+  // Core sphere - deep oceanic
+  const sphereMat = new THREE.MeshPhongMaterial({ color: 0x0a1225, emissive: 0x020614, shininess: 85, transparent: true, opacity: 0.94 });
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_R, 128, 128), sphereMat);
+  scene.add(sphere);
+  
+  // Atmosphere layers
+  const atmoMat = new THREE.MeshPhongMaterial({ color: 0x1e3f7a, side: THREE.BackSide, transparent: true, opacity: 0.2 });
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_R * 1.03, 64, 64), atmoMat));
+  const outerGlow = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_R * 1.12, 64, 64), new THREE.MeshPhongMaterial({ color: 0x4f8ef7, side: THREE.BackSide, transparent: true, opacity: 0.04 }));
+  scene.add(outerGlow);
+  
+  // Subtle latitude/longitude grid
+  const gridMat = new THREE.LineBasicMaterial({ color: 0x1e4470, transparent: true, opacity: 0.18 });
+  const gridGroup = new THREE.Group();
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const pts = [];
+    const rad = GLOBE_R * 1.001;
+    const phi = (90 - lat) * Math.PI / 180;
+    for (let lng = 0; lng <= 360; lng += 8) {
+      const theta = lng * Math.PI / 180;
+      pts.push(new THREE.Vector3(rad * Math.sin(phi) * Math.cos(theta), rad * Math.cos(phi), rad * Math.sin(phi) * Math.sin(theta)));
+    }
+    gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  }
+  for (let lng = 0; lng < 360; lng += 30) {
+    const pts = [];
+    const rad = GLOBE_R * 1.001;
+    for (let lat = -80; lat <= 80; lat += 5) {
+      const phi = (90 - lat) * Math.PI / 180;
+      const theta = lng * Math.PI / 180;
+      pts.push(new THREE.Vector3(rad * Math.sin(phi) * Math.cos(theta), rad * Math.cos(phi), rad * Math.sin(phi) * Math.sin(theta)));
+    }
+    gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  }
+  scene.add(gridGroup);
+  
+  // ========== DENSE CONSTELLATION DOTS (many points across continents) ==========
+  const dotGroup = new THREE.Group();
+  const dotMaterial = new THREE.MeshStandardMaterial({ color: 0x4a8eef, emissive: 0x0a2a5a });
+  
+  // High-density land regions for rich coverage
+  const landRegions = [
+    { latMin: 20, latMax: 70, lonMin: -130, lonMax: -60, density: 280 },   // North America
+    { latMin: 12, latMax: 60, lonMin: -125, lonMax: -65, density: 200 },    // West coast & central
+    { latMin: -55, latMax: 15, lonMin: -80, lonMax: -35, density: 320 },    // South America
+    { latMin: 35, latMax: 72, lonMin: -12, lonMax: 45, density: 380 },      // Europe
+    { latMin: -35, latMax: 36, lonMin: -18, lonMax: 52, density: 450 },     // Africa
+    { latMin: 5, latMax: 70, lonMin: 40, lonMax: 148, density: 600 },       // Asia (dense)
+    { latMin: -42, latMax: -8, lonMin: 110, lonMax: 158, density: 180 },    // Australia + NZ
+    { latMin: 55, latMax: 82, lonMin: -70, lonMax: -20, density: 100 },     // Greenland/Arctic
+    { latMin: 20, latMax: 40, lonMin: 55, lonMax: 80, density: 160 },       // Middle East
+    { latMin: -10, latMax: 25, lonMin: 65, lonMax: 105, density: 260 },     // India / Southeast Asia
+    { latMin: 30, latMax: 45, lonMin: 125, lonMax: 145, density: 150 },     // Japan/Korea
+    { latMin: -35, latMax: -20, lonMin: -75, lonMax: -60, density: 80 },    // Chile/Argentina coast
+    { latMin: 45, latMax: 55, lonMin: -125, lonMax: -115, density: 70 }     // Pacific Northwest
+  ];
+  
+  landRegions.forEach(region => {
+    const latRange = region.latMax - region.latMin;
+    const lonRange = region.lonMax - region.lonMin;
+    const count = Math.floor(region.density);
+    for (let i = 0; i < count; i++) {
+      const lat = region.latMin + Math.random() * latRange;
+      const lon = region.lonMin + Math.random() * lonRange;
+      const pos = latLonToVec3(lat, lon, GLOBE_R + 0.004);
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.0042, 6, 6), dotMaterial.clone());
+      dot.position.copy(pos);
+      dotGroup.add(dot);
+    }
+  });
+  
+  // Add extra scattered dots for organic feel (coastal glow)
+  for (let i = 0; i < 650; i++) {
+    const lat = (Math.random() * 170) - 85;
+    const lon = Math.random() * 360 - 180;
+    const pos = latLonToVec3(lat, lon, GLOBE_R + 0.0035);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.0035, 5, 5), dotMaterial);
+    dot.position.copy(pos);
+    dotGroup.add(dot);
+  }
+  
+  scene.add(dotGroup);
+  console.log(`🌍 Added ${dotGroup.children.length} beautiful location dots`);
+  
+  // ========== HUB NODES (12 key cities with pulsing rings) ==========
+  const hubNodes = [];
+  const hubGroup = new THREE.Group();
+  const nodeCoreMat = new THREE.MeshStandardMaterial({ color: 0x5f9eff, emissive: 0x1a4c9e });
+  const nodeRingMat = new THREE.MeshStandardMaterial({ color: 0x8ab9ff, transparent: true, opacity: 0.6 });
+  
+  hubCities.forEach((city, idx) => {
+    const pos = latLonToVec3(city.lat, city.lon, GLOBE_R + 0.012);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.021, 28, 28), nodeCoreMat);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.032, 0.062, 28), nodeRingMat);
+    core.position.copy(pos);
+    ring.position.copy(pos);
+    ring.lookAt(0,0,0);
+    core.visible = false;
+    ring.visible = false;
+    hubGroup.add(core);
+    hubGroup.add(ring);
+    hubNodes.push({ dot: core, ring, pos, idx, name: city.name });
+  });
+  scene.add(hubGroup);
+  
+  // ========== MODERATE ARC CONNECTIONS (single elegant color scheme) ==========
+  const arcGroup = new THREE.Group();
+  scene.add(arcGroup);
+  const arcStates = finalConnections.map(() => ({ line: null, progress: 0, active: false }));
+  
+  function computeArcPoints(i, j, progress) {
+    const p1 = hubNodes[i].pos;
+    const p2 = hubNodes[j].pos;
+    const midDir = p1.clone().add(p2).normalize();
+    const dist = p1.distanceTo(p2);
+    const height = GLOBE_R + 0.48 + (dist * 0.28);
+    const mid = midDir.multiplyScalar(height);
+    const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+    const segments = Math.max(22, Math.floor(32 * progress));
+    return curve.getPoints(segments);
+  }
+  
+  function updateArc(idx, progressVal) {
+    const [a, b] = finalConnections[idx];
+    const obj = arcStates[idx];
+    if (obj.line) {
+      arcGroup.remove(obj.line);
+      if (obj.line.geometry) obj.line.geometry.dispose();
+    }
+    if (progressVal <= 0.01) return;
+    const pts = computeArcPoints(a, b, progressVal);
+    if (pts.length < 2) return;
+    // Elegant consistent color: soft azure with subtle glow feel
+    const mat = new THREE.LineBasicMaterial({ color: 0x5f9eff, transparent: true, opacity: 0.55 * progressVal });
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    obj.line = new THREE.Line(geo, mat);
+    arcGroup.add(obj.line);
+  }
+  
+  // Cinematic lighting
+  const ambient = new THREE.AmbientLight(0x182341, 1.5);
+  scene.add(ambient);
+  const mainLight = new THREE.DirectionalLight(0x6d9eff, 1.3);
+  mainLight.position.set(3, 5, 2);
+  scene.add(mainLight);
+  const fillLight = new THREE.PointLight(0x483e7e, 0.6);
+  fillLight.position.set(-2, 1, -3);
+  scene.add(fillLight);
+  const backRim = new THREE.PointLight(0x3b82f6, 0.65);
+  backRim.position.set(1, 1.5, -3.2);
+  scene.add(backRim);
+  
+  // Starfield (deep space)
+  const starCount = 2600;
+  const starPos = [];
+  for (let i = 0; i < starCount; i++) {
+    const rad = 4.2 + Math.random() * 2.8;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    starPos.push(rad * Math.sin(phi) * Math.cos(theta), rad * Math.cos(phi), rad * Math.sin(phi) * Math.sin(theta));
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xaaccff, size: 0.007, transparent: true, opacity: 0.45 });
+  const stars = new THREE.Points(starGeo, starMat);
+  scene.add(stars);
+  
+  // ========== SCROLL ANIMATION (globe grows, connections appear, lots of dots) ==========
+  let scrollProgress = 0;
+  let globeRotY = 0;
+  let currentGlobeScale = 0.01;
+  let targetGlobeScale = 1.0;
+  let currentCameraZ = 2.8;
+  let lastTime = 0;
+  let timeAcc = 0;
+  
+  const heroDiv = document.getElementById('hero-content');
+  const statsDiv = document.getElementById('stats-bar');
+  const scrollHintDiv = document.getElementById('scroll-hint');
+  const connCountDiv = document.getElementById('connection-count');
+  const scrollProgressBar = document.getElementById('scroll-progress');
+  
+  function getScrollFraction() {
+    const scrollable = document.getElementById('scroll-container').offsetHeight - window.innerHeight;
+    if (scrollable <= 0) return 0;
+    return Math.min(1, Math.max(0, window.scrollY / scrollable));
+  }
+  
+  window.addEventListener('scroll', () => {
+    scrollProgress = getScrollFraction();
+    scrollProgressBar.style.width = (scrollProgress * 100) + '%';
+  });
+  
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+  
+  function animate(now) {
+    requestAnimationFrame(animate);
+    const dt = Math.min(0.033, (now - lastTime) / 1000);
+    lastTime = now;
+    timeAcc += dt;
+    const p = scrollProgress;
+    
+    // GLOBE GROWTH: starts tiny, expands to full
+    const growthProgress = Math.min(1, p / 0.28);
+    const easedGrowth = easeOutCubic(growthProgress);
+    targetGlobeScale = 0.05 + easedGrowth * 0.95;
+    currentGlobeScale += (targetGlobeScale - currentGlobeScale) * 0.12;
+    sphere.scale.setScalar(currentGlobeScale);
+    dotGroup.scale.setScalar(currentGlobeScale);
+    hubGroup.scale.setScalar(currentGlobeScale);
+    arcGroup.scale.setScalar(currentGlobeScale);
+    gridGroup.scale.setScalar(currentGlobeScale);
+    atmoMat.opacity = 0.2 * currentGlobeScale;
+    outerGlow.material.opacity = 0.04 * currentGlobeScale;
+    
+    // Rotation speed dynamic
+    const rotSpeed = p < 0.2 ? 0.28 : p > 0.7 ? 0.035 : 0.1;
+    globeRotY += dt * rotSpeed;
+    sphere.rotation.y = globeRotY;
+    dotGroup.rotation.y = globeRotY;
+    hubGroup.rotation.y = globeRotY;
+    arcGroup.rotation.y = globeRotY;
+    gridGroup.rotation.y = globeRotY;
+    
+    // Camera zoom + gentle tilt
+    const zoomFactor = 2.8 + (Math.max(0, p - 0.3) * 0.34);
+    currentCameraZ += ((zoomFactor) - currentCameraZ) * 0.08;
+    camera.position.z = currentCameraZ;
+    camera.position.y = 0.05 + p * 0.09;
+    
+    // Gentle vertical lift at end
+    const lift = p > 0.72 ? (p - 0.72) / 0.28 * 0.18 : 0;
+    sphere.position.y = -lift * 0.18;
+    dotGroup.position.y = sphere.position.y;
+    hubGroup.position.y = sphere.position.y;
+    arcGroup.position.y = sphere.position.y;
+    gridGroup.position.y = sphere.position.y;
+    
+    // HUB NODES appear progressively
+    const hubStart = 0.14;
+    if (p >= hubStart) {
+      const hubFade = Math.min(1, (p - hubStart) / 0.22);
+      hubNodes.forEach((node, idx) => {
+        const delay = idx * 0.008;
+        const visible = hubFade > delay;
+        node.dot.visible = visible;
+        node.ring.visible = visible;
+        if (visible) {
+          const pulse = 1 + Math.sin(timeAcc * 2.5 + idx) * 0.1;
+          node.dot.scale.setScalar(pulse);
+          node.ring.scale.setScalar(1 + Math.sin(timeAcc * 2.0 + idx) * 0.15);
+        }
+      });
+    } else {
+      hubNodes.forEach(n => { n.dot.visible = false; n.ring.visible = false; });
+    }
+    
+    // CONNECTIONS grow smoothly (not overwhelming)
+    const arcStart = 0.30, arcEnd = 0.68;
+    if (p >= arcStart) {
+      const arcFactor = Math.min(1, (p - arcStart) / (arcEnd - arcStart));
+      const arcsToShow = Math.floor(arcFactor * finalConnections.length);
+      let activeCount = 0;
+      for (let i = 0; i < finalConnections.length; i++) {
+        if (i < arcsToShow) {
+          if (!arcStates[i].active) { arcStates[i].active = true; arcStates[i].progress = 0; }
+          if (arcStates[i].progress < 1) {
+            arcStates[i].progress = Math.min(1, arcStates[i].progress + dt * 1.0);
+            updateArc(i, arcStates[i].progress);
+          }
+          if (arcStates[i].progress > 0.1) activeCount++;
+        } else {
+          if (arcStates[i].progress > 0) {
+            arcStates[i].progress = Math.max(0, arcStates[i].progress - dt * 1.2);
+            updateArc(i, arcStates[i].progress);
+            if (arcStates[i].progress === 0) arcStates[i].active = false;
+          }
+        }
+      }
+      if (activeCount > 0 && p < 0.78) {
+        connCountDiv.style.opacity = '0.98';
+        connCountDiv.textContent = `✨ ${activeCount} global neural links active`;
+      } else { connCountDiv.style.opacity = '0'; }
+    } else {
+      connCountDiv.style.opacity = '0';
+      // fade out if scrolling back
+      for (let i = 0; i < arcStates.length; i++) {
+        if (arcStates[i].progress > 0) {
+          arcStates[i].progress = Math.max(0, arcStates[i].progress - dt * 1.3);
+          updateArc(i, arcStates[i].progress);
+        }
+      }
+    }
+    
+    // Hero + Stats fade in final stage
+    const heroAlpha = Math.min(1, Math.max(0, (p - 0.77) / 0.11));
+    heroDiv.classList.toggle('visible', heroAlpha > 0.05);
+    heroDiv.style.opacity = heroAlpha;
+    statsDiv.style.opacity = heroAlpha;
+    scrollHintDiv.style.opacity = p < 0.08 ? 1 : Math.max(0, 1 - (p - 0.06) / 0.1);
+    
+    // Stars drift for ambiance
+    stars.rotation.y += 0.0004;
+    stars.rotation.x += 0.0002;
+    
+    renderer.render(scene, camera);
+  }
+  
+  requestAnimationFrame((t) => { lastTime = t; animate(t); });
+})();
+</script>
+</body>
+</html>

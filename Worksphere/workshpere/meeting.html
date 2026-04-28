@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkSphere — Meeting Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #050b18;
+  --bg-card: #0d1628;
+  --bg-card2: #111e35;
+  --bg-hover: #162240;
+  --border: rgba(99,179,237,0.12);
+  --border-bright: rgba(99,179,237,0.28);
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-violet: #818cf8;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #f43f5e;
+  --accent-pink: #ec4899;
+  --text-primary: #e8f0fe;
+  --text-secondary: #7e9cc0;
+  --text-muted: #4a6580;
+  --gradient-main: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #818cf8 100%);
+  --gradient-card: linear-gradient(145deg, #0d1628 0%, #111e35 100%);
+  --glow-blue: 0 0 28px rgba(59,130,246,0.22);
+  --glow-cyan: 0 0 28px rgba(6,182,212,0.22);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg-deep);
+  color:var(--text-primary);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 700px 500px at 10% 15%, rgba(59,130,246,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 400px at 85% 80%, rgba(129,140,248,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 50%, rgba(6,182,212,0.03) 0%, transparent 70%);
+  z-index:0;
+}
+
+
+
+/* ── MAIN LAYOUT ── */
+.main{margin-left:0; min-height:100vh; display:flex; flex-direction:column;}
+
+.topbar {
+  position:sticky; top:0; z-index:90;
+  background:rgba(5,11,24,0.88); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 28px; display:flex; align-items:center; gap:16px; height:64px;
+}
+.back-btn {
+  display:flex; align-items:center; gap:6px;
+  color:var(--text-secondary); text-decoration:none;
+  font-size:.85rem; padding:8px 12px; border-radius:999px;
+  background:rgba(255,255,255,.04); transition:all .2s;
+}
+.back-btn:hover { color:var(--text); background:rgba(255,255,255,.08); }
+.topbar-title{
+  font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem;
+  background:var(--gradient-main);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.topbar-sub{font-size:0.78rem;color:var(--text-secondary);margin-top:1px;}
+.topbar-left{flex:1;}
+.topbar-actions{display:flex;align-items:center;gap:10px;}
+.avatar{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--gradient-main);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:0.85rem;
+  cursor:pointer;box-shadow:var(--glow-blue);
+}
+
+/* ── PAGE BODY ── */
+.page-body {
+  display:grid;
+  grid-template-columns:360px 1fr;
+  min-height:calc(100vh - 64px);
+}
+
+/* ── LEFT PANEL ── */
+.left-panel {
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  background:var(--bg-card);
+  position:sticky; top:64px; height:calc(100vh - 64px);
+  overflow:hidden;
+}
+
+.left-header {
+  padding:20px 20px 14px; border-bottom:1px solid var(--border);
+  display:flex; flex-direction:column; gap:12px; flex-shrink:0;
+}
+
+.left-header-top{display:flex;align-items:center;justify-content:space-between;}
+.left-title{font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;}
+
+.btn-new {
+  display:flex; align-items:center; gap:6px;
+  background:var(--gradient-main); border:none; border-radius:10px;
+  padding:7px 14px; font-size:0.78rem; font-weight:700;
+  color:#fff; cursor:pointer; box-shadow:var(--glow-blue); transition:all 0.2s;
+  font-family:'DM Sans',sans-serif; white-space:nowrap;
+}
+.btn-new:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(59,130,246,0.38);}
+
+.search-bar {
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg-card2); border:1px solid var(--border);
+  border-radius:10px; padding:8px 12px; transition:border 0.2s;
+}
+.search-bar:focus-within{border-color:var(--border-bright);}
+.search-bar input {
+  flex:1; background:none; border:none; outline:none;
+  font-size:0.82rem; color:var(--text-primary); font-family:'DM Sans',sans-serif;
+}
+.search-bar input::placeholder{color:var(--text-muted);}
+.search-bar .si{color:var(--text-muted);font-size:0.9rem;}
+
+.filter-row{display:flex;gap:6px;}
+.filter-chip {
+  font-size:0.72rem; padding:5px 12px; border-radius:8px;
+  border:1px solid var(--border); background:transparent;
+  color:var(--text-muted); cursor:pointer; transition:all 0.2s;
+  font-family:'DM Sans',sans-serif;
+}
+.filter-chip.active {
+  background:rgba(59,130,246,0.15); color:var(--accent-blue);
+  border-color:rgba(59,130,246,0.35);
+}
+.filter-chip:hover{color:var(--text-primary);border-color:var(--border-bright);}
+
+/* meetings list */
+.meetings-list{overflow-y:auto;flex:1;padding:8px;}
+.meetings-list::-webkit-scrollbar{width:4px;}
+.meetings-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+.meeting-item {
+  border-radius:12px; padding:14px; margin-bottom:6px;
+  border:1px solid transparent; cursor:pointer; transition:all 0.2s;
+  position:relative; overflow:hidden;
+}
+.meeting-item:hover{background:var(--bg-card2);border-color:var(--border);}
+.meeting-item.active{
+  background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(6,182,212,0.07));
+  border-color:var(--border-bright);
+}
+.meeting-item.active::before{
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width:3px; background:var(--gradient-main);
+}
+
+.mi-title{font-size:0.86rem;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
+.mi-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.mi-date{font-size:0.72rem;color:var(--text-muted);}
+.mi-dur{font-size:0.7rem;color:var(--text-muted);background:var(--bg-hover);padding:2px 7px;border-radius:6px;}
+
+.mood-chip{
+  font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.mood-chip.positive{background:rgba(16,185,129,0.18);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);}
+.mood-chip.neutral{background:rgba(99,179,237,0.15);color:#63b3ed;border:1px solid rgba(99,179,237,0.3);}
+.mood-chip.tense{background:rgba(244,63,94,0.18);color:var(--accent-red);border:1px solid rgba(244,63,94,0.3);}
+.mood-chip.mixed{background:rgba(245,158,11,0.18);color:var(--accent-amber);border:1px solid rgba(245,158,11,0.3);}
+
+.mi-score{
+  display:flex;align-items:center;gap:2px;margin-left:auto;
+}
+.mi-star{color:var(--accent-amber);font-size:0.75rem;}
+.mi-score-val{font-size:0.72rem;font-weight:700;color:var(--text-secondary);}
+
+/* ── RIGHT PANEL ── */
+.right-panel{
+  display:flex;flex-direction:column;overflow-y:auto;
+  background:var(--bg-deep);
+}
+.right-panel::-webkit-scrollbar{width:5px;}
+.right-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* ── INPUT SECTION ── */
+.input-section{padding:28px 32px;border-bottom:1px solid var(--border);}
+
+.input-section-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;
+  margin-bottom:20px; display:flex;align-items:center;gap:10px;
+}
+.input-section-title .badge-new{
+  font-size:0.62rem;font-weight:700;letter-spacing:0.08em;
+  background:var(--gradient-main);color:#fff;
+  padding:3px 8px;border-radius:6px;-webkit-text-fill-color:#fff;
+}
+
+.meta-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
+
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.field-label{font-size:0.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;}
+.field-input{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:10px;padding:9px 13px;
+  font-size:0.83rem;color:var(--text-primary);outline:none;
+  font-family:'DM Sans',sans-serif;transition:border 0.2s;
+}
+.field-input:focus{border-color:var(--border-bright);}
+.field-input::placeholder{color:var(--text-muted);}
+
+/* textarea */
+.notes-label{font-size:0.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;}
+.notes-area{
+  width:100%;min-height:160px;
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:14px;padding:14px 16px;resize:vertical;
+  font-size:0.85rem;color:var(--text-primary);outline:none;
+  font-family:'DM Sans',sans-serif;line-height:1.6;transition:border 0.2s;
+}
+.notes-area:focus{border-color:var(--border-bright);}
+.notes-area::placeholder{color:var(--text-muted);}
+
+/* file attach */
+.attach-zone{
+  border:1.5px dashed var(--border);border-radius:12px;
+  padding:16px 20px; margin-top:12px;
+  display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:all 0.2s;background:rgba(13,22,40,0.5);
+  position:relative;overflow:hidden;
+}
+.attach-zone:hover{border-color:var(--border-bright);background:var(--bg-hover);}
+.attach-zone.dragover{border-color:var(--accent-blue);background:rgba(59,130,246,0.08);}
+.attach-icon{font-size:1.6rem;flex-shrink:0;}
+.attach-text{flex:1;}
+.attach-text strong{display:block;font-size:0.85rem;font-weight:600;color:var(--text-primary);margin-bottom:2px;}
+.attach-text span{font-size:0.76rem;color:var(--text-muted);}
+.attach-btn{
+  background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);
+  border-radius:8px;padding:7px 14px;
+  font-size:0.76rem;font-weight:600;color:var(--accent-blue);
+  cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;white-space:nowrap;
+}
+.attach-btn:hover{background:rgba(59,130,246,0.28);}
+#fileInput{display:none;}
+
+.attached-files{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.file-tag{
+  display:flex;align-items:center;gap:7px;
+  background:var(--bg-card2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;font-size:0.78rem;
+  color:var(--text-secondary); animation:pop-in 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes pop-in{from{opacity:0;transform:scale(0.7);}to{opacity:1;transform:scale(1);}}
+.file-tag .ft-icon{font-size:0.9rem;}
+.file-tag .ft-remove{color:var(--text-muted);cursor:pointer;margin-left:4px;transition:color 0.2s;}
+.file-tag .ft-remove:hover{color:var(--accent-red);}
+
+/* action row */
+.action-row{display:flex;gap:10px;margin-top:16px;align-items:center;}
+.btn-analyze{
+  display:flex;align-items:center;gap:8px;
+  background:var(--gradient-main);border:none;border-radius:12px;
+  padding:11px 24px;font-size:0.88rem;font-weight:700;
+  color:#fff;cursor:pointer;box-shadow:var(--glow-blue);transition:all 0.25s;
+  font-family:'DM Sans',sans-serif;
+}
+.btn-analyze:hover{transform:translateY(-2px);box-shadow:0 0 35px rgba(59,130,246,0.42);}
+.btn-analyze.loading{opacity:0.8;pointer-events:none;}
+.btn-clear{
+  background:transparent;border:1px solid var(--border);border-radius:12px;
+  padding:11px 20px;font-size:0.84rem;font-weight:600;
+  color:var(--text-secondary);cursor:pointer;transition:all 0.2s;
+  font-family:'DM Sans',sans-serif;
+}
+.btn-clear:hover{border-color:var(--border-bright);color:var(--text-primary);}
+
+.char-count{font-size:0.72rem;color:var(--text-muted);margin-left:auto;}
+
+/* ── ANALYSIS RESULTS ── */
+.results-section{
+  padding:28px 32px;display:flex;flex-direction:column;gap:22px;
+  animation:fade-up 0.4s ease;
+}
+@keyframes fade-up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* loading skeleton */
+.skeleton-section{padding:28px 32px;display:flex;flex-direction:column;gap:16px;animation:fade-up 0.3s ease;}
+.skel{border-radius:10px;background:linear-gradient(90deg,var(--bg-card) 25%,var(--bg-card2) 50%,var(--bg-card) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.skel-title{height:20px;width:200px;margin-bottom:6px;}
+.skel-line{height:14px;margin-bottom:5px;}
+.skel-line.w80{width:80%;}
+.skel-line.w60{width:60%;}
+.skel-line.w90{width:90%;}
+.skel-block{height:80px;width:100%;border-radius:12px;}
+
+/* result card */
+.result-card{
+  background:var(--gradient-card);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;transition:border 0.2s;
+}
+.result-card:hover{border-color:var(--border-bright);}
+
+.rc-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 14px;border-bottom:1px solid var(--border);
+}
+.rc-title{
+  font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;
+  display:flex;align-items:center;gap:8px;
+}
+.rc-action{
+  font-size:0.73rem;color:var(--accent-blue);cursor:pointer;
+  padding:4px 10px;border-radius:7px;border:1px solid rgba(59,130,246,0.25);transition:all 0.2s;
+}
+.rc-action:hover{background:rgba(59,130,246,0.12);}
+.rc-body{padding:18px 20px;}
+
+/* summary */
+.summary-text{font-size:0.87rem;color:var(--text-secondary);line-height:1.7;}
+
+/* decisions list */
+.decision-list{display:flex;flex-direction:column;gap:8px;}
+.decision-item{
+  display:flex;align-items:flex-start;gap:10px;
+  background:var(--bg-card2);border:1px solid var(--border);
+  border-radius:10px;padding:10px 14px;
+  font-size:0.83rem;color:var(--text-secondary);line-height:1.5;
+  transition:border 0.2s;
+}
+.decision-item:hover{border-color:var(--border-bright);}
+.di-bullet{
+  width:22px;height:22px;border-radius:7px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(59,130,246,0.25),rgba(6,182,212,0.15));
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.7rem;font-weight:800;color:var(--accent-cyan);
+}
+
+/* action items */
+.action-table{width:100%;border-collapse:collapse;}
+.action-table thead tr{border-bottom:1px solid var(--border);}
+.action-table th{
+  text-align:left;padding:8px 12px;
+  font-size:0.68rem;font-weight:700;letter-spacing:0.07em;
+  text-transform:uppercase;color:var(--text-muted);
+}
+.action-table tbody tr{border-bottom:1px solid rgba(99,179,237,0.06);transition:background 0.15s;}
+.action-table tbody tr:hover{background:var(--bg-hover);}
+.action-table tbody tr:last-child{border-bottom:none;}
+.action-table td{padding:10px 12px;font-size:0.82rem;color:var(--text-secondary);}
+.action-table td:first-child{color:var(--text-primary);font-weight:500;}
+.owner-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(129,140,248,0.15);color:var(--accent-violet);
+  border:1px solid rgba(129,140,248,0.25);border-radius:7px;
+  padding:2px 8px;font-size:0.74rem;font-weight:600;
+}
+.due-tag{
+  font-size:0.74rem;color:var(--text-muted);
+  background:var(--bg-card2);padding:2px 8px;border-radius:6px;
+}
+.due-tag.urgent{color:var(--accent-red);background:rgba(244,63,94,0.1);}
+
+.action-cb-col{width:32px;text-align:center;}
+input[type=checkbox]{
+  accent-color:var(--accent-blue);width:14px;height:14px;cursor:pointer;
+}
+
+.action-footer{
+  display:flex;gap:8px;padding:14px 20px;
+  border-top:1px solid var(--border);background:rgba(13,22,40,0.5);
+}
+.btn-tasks{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);
+  border-radius:9px;padding:8px 16px;
+  font-size:0.79rem;font-weight:700;color:var(--accent-green);
+  cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;
+}
+.btn-tasks:hover{background:rgba(16,185,129,0.28);transform:translateY(-1px);}
+
+/* mood / urgency */
+.mood-urgency-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.mu-card{
+  background:var(--bg-card2);border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px;
+  display:flex;flex-direction:column;gap:6px;
+  transition:all 0.2s;
+}
+.mu-card:hover{border-color:var(--border-bright);transform:translateY(-2px);}
+.mu-label{font-size:0.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;}
+.mu-value{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;}
+.mu-value.positive{color:var(--accent-green);}
+.mu-value.neutral{color:#63b3ed;}
+.mu-value.tense{color:var(--accent-red);}
+.mu-value.high{color:var(--accent-red);}
+.mu-value.medium{color:var(--accent-amber);}
+.mu-value.low{color:var(--accent-green);}
+.mu-sub{font-size:0.75rem;color:var(--text-muted);line-height:1.4;}
+.conflict-box{
+  background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.2);
+  border-radius:10px;padding:10px 14px;
+  font-size:0.8rem;color:var(--text-secondary);line-height:1.5;
+  display:flex;gap:8px;align-items:flex-start;margin-top:12px;
+}
+
+/* participation */
+.participation-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.part-item{
+  background:var(--bg-card2);border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px;
+}
+.part-label{font-size:0.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;}
+.part-stat{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text-primary);margin-bottom:2px;}
+.part-sub{font-size:0.76rem;color:var(--text-muted);}
+
+.workload-rows{display:flex;flex-direction:column;gap:6px;margin-top:12px;}
+.wl-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg-card2);border:1px solid var(--border);
+  border-radius:9px;padding:8px 12px;
+}
+.wl-name{font-size:0.81rem;font-weight:600;color:var(--text-primary);width:90px;flex-shrink:0;}
+.wl-bar-wrap{flex:1;height:5px;background:var(--border);border-radius:4px;overflow:hidden;}
+.wl-bar{height:100%;border-radius:4px;background:var(--gradient-main);transition:width 1s ease;}
+.wl-count{font-size:0.75rem;font-weight:700;color:var(--text-secondary);width:40px;text-align:right;flex-shrink:0;}
+.wl-most{
+  font-size:0.77rem;color:var(--text-muted);margin-top:8px;padding:8px 12px;
+  background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:9px;
+}
+
+/* quality */
+.quality-score-wrap{display:flex;align-items:center;gap:16px;margin-bottom:14px;}
+.quality-score-num{
+  font-family:'Syne',sans-serif;font-size:2.8rem;font-weight:800;
+  background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1;
+}
+.quality-score-denom{font-size:1.1rem;color:var(--text-muted);}
+.quality-label{font-size:0.85rem;color:var(--text-secondary);font-weight:500;}
+.quality-stars{display:flex;gap:3px;margin:4px 0;}
+.qs{font-size:1.1rem;}
+
+.quality-bar-wrap{margin:10px 0;}
+.quality-bar-track{height:6px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:8px;}
+.quality-bar-fill{height:100%;border-radius:4px;background:var(--gradient-main);transition:width 1.2s ease;}
+.quality-feedback{
+  display:flex;flex-direction:column;gap:7px;margin-top:10px;
+}
+.qf-item{
+  display:flex;gap:9px;align-items:flex-start;
+  font-size:0.81rem;color:var(--text-secondary);line-height:1.5;
+}
+.qf-icon{font-size:0.9rem;flex-shrink:0;}
+
+/* bottom actions */
+.bottom-actions{
+  display:flex;gap:10px;padding:24px 32px;
+  border-top:1px solid var(--border);
+  background:var(--bg-card);
+  flex-wrap:wrap;align-items:center;
+}
+.btn-copy{
+  display:flex;align-items:center;gap:7px;
+  background:var(--bg-card2);border:1px solid var(--border);
+  border-radius:12px;padding:10px 20px;
+  font-size:0.84rem;font-weight:600;color:var(--text-primary);
+  cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;
+}
+.btn-copy:hover{border-color:var(--border-bright);background:var(--bg-hover);}
+.btn-save{
+  display:flex;align-items:center;gap:7px;
+  background:var(--gradient-main);border:none;border-radius:12px;
+  padding:10px 24px;font-size:0.84rem;font-weight:700;
+  color:#fff;cursor:pointer;box-shadow:var(--glow-blue);transition:all 0.2s;
+  font-family:'DM Sans',sans-serif;
+}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(59,130,246,0.4);}
+.saved-tag{
+  margin-left:auto;font-size:0.78rem;color:var(--accent-green);
+  display:flex;align-items:center;gap:5px;
+  background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);
+  border-radius:8px;padding:5px 12px;
+  opacity:0;transition:opacity 0.3s;
+}
+.saved-tag.visible{opacity:1;}
+
+/* advanced toggle */
+.advanced-toggle{
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:0.78rem;color:var(--text-muted);padding:0 32px 16px;
+  transition:color 0.2s;
+}
+.advanced-toggle:hover{color:var(--text-secondary);}
+.toggle-switch{
+  width:32px;height:18px;border-radius:9px;
+  background:var(--border);border:1px solid var(--border);
+  position:relative;transition:all 0.3s;flex-shrink:0;
+}
+.toggle-switch.on{background:rgba(59,130,246,0.4);border-color:var(--accent-blue);}
+.toggle-switch::before{
+  content:'';position:absolute;top:2px;left:2px;
+  width:12px;height:12px;border-radius:50%;
+  background:var(--text-muted);transition:all 0.3s;
+}
+.toggle-switch.on::before{left:16px;background:var(--accent-blue);}
+
+/* empty state */
+.empty-state{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 40px;text-align:center;gap:16px;opacity:0.7;
+}
+.empty-icon{font-size:3rem;opacity:0.5;}
+.empty-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--text-secondary);}
+.empty-sub{font-size:0.82rem;color:var(--text-muted);max-width:300px;line-height:1.6;}
+
+/* toast */
+.toast{
+  position:fixed;bottom:28px;right:28px;z-index:999;
+  background:var(--bg-card2);border:1px solid var(--border-bright);
+  border-radius:14px;padding:12px 18px;
+  display:flex;align-items:center;gap:10px;
+  font-size:0.83rem;color:var(--text-primary);font-weight:500;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4),var(--glow-blue);
+  transform:translateY(80px);opacity:0;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <a href="module.html" class="back-btn">← Go Back</a>
+    <div class="topbar-left">
+      <div class="topbar-title">🎯 Meeting Intelligence</div>
+      <div class="topbar-sub">Transform raw notes into structured insights, decisions & action items</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="avatar">SJ</div>
+    </div>
+  </div>
+
+  <!-- PAGE BODY -->
+  <div class="page-body">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div class="left-header">
+        <div class="left-header-top">
+          <div class="left-title">Your Meetings</div>
+          <button class="btn-new" onclick="newAnalysis()">＋ New Analysis</button>
+        </div>
+        <div class="search-bar">
+          <span class="si">🔍</span>
+          <input placeholder="Search meetings…" oninput="filterMeetings(this.value)" id="searchInput">
+        </div>
+        <div class="filter-row" id="filterRow">
+          <div class="filter-chip active" onclick="setFilter('all',this)">All</div>
+          <div class="filter-chip" onclick="setFilter('week',this)">This Week</div>
+          <div class="filter-chip" onclick="setFilter('month',this)">This Month</div>
+        </div>
+      </div>
+      <div class="meetings-list" id="meetingsList"></div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel" id="rightPanel">
+
+      <!-- INPUT SECTION -->
+      <div class="input-section" id="inputSection">
+        <div class="input-section-title">
+          Analyze Meeting
+          <span class="badge-new">AI</span>
+        </div>
+
+        <div class="meta-row">
+          <div class="field-group">
+            <div class="field-label">Meeting Title</div>
+            <input class="field-input" id="meetingTitle" placeholder="e.g. Sprint Planning Q2">
+          </div>
+          <div class="field-group">
+            <div class="field-label">Date & Time</div>
+            <input class="field-input" type="datetime-local" id="meetingDate" value="2026-03-27T14:00">
+          </div>
+          <div class="field-group">
+            <div class="field-label">Attendees</div>
+            <input class="field-input" id="attendees" placeholder="Alice, Ravi, Meera, Sam">
+          </div>
+        </div>
+
+        <div class="meta-row" style="grid-template-columns:1fr 1fr;margin-top:-4px;">
+          <div class="field-group">
+            <div class="field-label">Duration</div>
+            <input class="field-input" id="duration" placeholder="e.g. 45 min">
+          </div>
+          <div class="field-group">
+            <div class="field-label">Project / Team</div>
+            <input class="field-input" id="project" placeholder="e.g. WorkSphere v2">
+          </div>
+        </div>
+
+        <div class="notes-label">Meeting Notes / Transcript</div>
+        <textarea class="notes-area" id="notesArea" placeholder="Paste your meeting notes or transcript here…
+
+Example:
+Attendees: Alice, Ravi, Meera, Sam
+Topic: Q2 Sprint Planning
+
+Alice opened by reviewing Q1 velocity. Team completed 82% of committed tasks.
+Ravi raised concern about the new API deadlines being too aggressive — suggested a 2-week buffer.
+Meera disagreed, citing client expectations. Tension was apparent.
+Decisions: Release date moved to May 10. Adopt new logging framework (Ravi to lead by April 15). Alice to write new onboarding docs by April 20. Meera to schedule client sync call." oninput="updateCount()"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:4px;">
+          <span class="char-count" id="charCount">0 / 5000 chars</span>
+        </div>
+
+        <!-- FILE ATTACHMENT -->
+        <div class="attach-zone" id="attachZone" onclick="document.getElementById('fileInput').click()"
+          ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+          <div class="attach-icon">📎</div>
+          <div class="attach-text">
+            <strong>Attach files</strong>
+            <span>Drag & drop or click — .txt, .pdf, .docx, .mp3, .m4a supported</span>
+          </div>
+          <div class="attach-btn" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Browse</div>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".txt,.pdf,.docx,.mp3,.m4a,.wav" onchange="handleFiles(this.files)">
+        <div class="attached-files" id="attachedFiles"></div>
+
+        <div class="action-row">
+          <button class="btn-analyze" id="analyzeBtn" onclick="analyzeNow()">
+            <span id="analyzeBtnIcon">✨</span>
+            <span id="analyzeBtnText">Analyze Meeting</span>
+          </button>
+          <button class="btn-clear" onclick="clearAll()">Clear</button>
+          <span class="char-count" style="margin-left:auto;font-size:0.75rem;color:var(--text-muted);" id="modelTag">Powered by WorkSphere AI</span>
+        </div>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🎯</div>
+        <div class="empty-title">No analysis yet</div>
+        <div class="empty-sub">Paste your meeting notes above and click "Analyze Meeting" to get structured insights, decisions, and action items.</div>
+      </div>
+
+      <!-- SKELETON LOADING -->
+      <div class="skeleton-section" id="skeletonSection" style="display:none;">
+        <div class="skel skel-title"></div>
+        <div class="skel skel-line w90"></div><div class="skel skel-line w80"></div><div class="skel skel-line w60"></div>
+        <div style="height:8px;"></div>
+        <div class="skel skel-title" style="width:160px;"></div>
+        <div class="skel skel-block"></div>
+        <div class="skel skel-title" style="width:180px;"></div>
+        <div class="skel skel-block"></div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="results-section" id="resultsSection" style="display:none;"></div>
+
+      <!-- ADVANCED TOGGLE -->
+      <div class="advanced-toggle" id="advancedToggle" style="display:none;" onclick="toggleAdvanced()">
+        <div class="toggle-switch" id="advSwitch"></div>
+        Show advanced insights (participation & quality)
+      </div>
+
+      <!-- BOTTOM ACTIONS -->
+      <div class="bottom-actions" id="bottomActions" style="display:none;">
+        <button class="btn-copy" onclick="copySummary()">📋 Copy Summary</button>
+        <button class="btn-save" onclick="saveMeeting()">💾 Save Analysis</button>
+        <div class="saved-tag" id="savedTag">✓ Saved to meetings</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── SAMPLE MEETINGS DATA ──
+const sampleMeetings = [
+  {
+    id:1, title:'Sprint Planning – Q2 2026', date:'2026-03-27', time:'14:00',
+    duration:'60 min', mood:'tense', score:3.2, project:'WorkSphere v2',
+    attendees:'Alice, Ravi, Meera, Sam',
+    notes:`Attendees: Alice, Ravi, Meera, Sam
+Topic: Q2 Sprint Planning
+
+Alice opened by reviewing Q1 velocity — team completed 82% of committed tasks. 
+Ravi raised concern about the new API deadlines being too aggressive and suggested a 2-week buffer. Meera disagreed strongly, citing client expectations and contract obligations. Tension was apparent throughout this section.
+Sam proposed a middle ground: partial release with core features on May 10, full release by May 24.
+Decisions: Release date moved to May 10 for core features. Adopt new logging framework — Ravi to lead implementation by April 15. Alice to write new onboarding docs by April 20. Meera to schedule client sync call this week. Sam to review CI/CD pipeline bottleneck by April 12.`,
+    analysis: null
+  },
+  {
+    id:2, title:'Product Roadmap Review', date:'2026-03-25', time:'10:30',
+    duration:'45 min', mood:'positive', score:4.1, project:'Product',
+    attendees:'Alice, David, Lisa',
+    notes:'...', analysis:null
+  },
+  {
+    id:3, title:'Infrastructure Migration Sync', date:'2026-03-24', time:'15:00',
+    duration:'30 min', mood:'neutral', score:3.8, project:'DevOps',
+    attendees:'David, Ravi, Sam',
+    notes:'...', analysis:null
+  },
+  {
+    id:4, title:'Design Review – Dashboard v3', date:'2026-03-20', time:'11:00',
+    duration:'90 min', mood:'positive', score:4.5, project:'WorkSphere v2',
+    attendees:'Alice, Meera, Lisa, Mike',
+    notes:'...', analysis:null
+  },
+  {
+    id:5, title:'Q1 Retrospective', date:'2026-03-18', time:'14:00',
+    duration:'60 min', mood:'mixed', score:3.0, project:'All Teams',
+    attendees:'Alice, Ravi, Meera, Sam, David, Lisa',
+    notes:'...', analysis:null
+  },
+];
+
+let currentFilter = 'all';
+let activeId = null;
+let showAdvanced = false;
+let attachedFiles = [];
+
+// ── RENDER MEETINGS LIST ──
+function renderList(query='') {
+  const list = document.getElementById('meetingsList');
+  const q = query.toLowerCase();
+  const filtered = sampleMeetings.filter(m => {
+    const matchQ = !q || m.title.toLowerCase().includes(q) || m.project.toLowerCase().includes(q);
+    if (!matchQ) return false;
+    if (currentFilter === 'week') {
+      const d = new Date(m.date);
+      const now = new Date('2026-03-28');
+      const diff = (now - d) / 86400000;
+      return diff <= 7;
+    }
+    if (currentFilter === 'month') {
+      const d = new Date(m.date);
+      return d.getMonth() === 2 && d.getFullYear() === 2026;
+    }
+    return true;
+  });
+
+  list.innerHTML = filtered.map(m => `
+    <div class="meeting-item ${m.id === activeId ? 'active' : ''}" onclick="loadMeeting(${m.id})">
+      <div class="mi-title">${m.title}</div>
+      <div class="mi-meta">
+        <span class="mi-date">${formatDate(m.date)} · ${m.time}</span>
+        <span class="mi-dur">${m.duration}</span>
+        <span class="mood-chip ${m.mood}">${moodIcon(m.mood)} ${cap(m.mood)}</span>
+        <span class="mi-score">
+          <span class="mi-star">★</span>
+          <span class="mi-score-val">${m.score}</span>
+        </span>
+      </div>
+    </div>`).join('');
+}
+
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+function moodIcon(m) {
+  return {positive:'😊',neutral:'😐',tense:'😤',mixed:'🤔'}[m] || '😐';
+}
+function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderList(document.getElementById('searchInput').value);
+}
+
+function filterMeetings(q) { renderList(q); }
+
+// ── LOAD MEETING INTO INPUT ──
+function loadMeeting(id) {
+  const m = sampleMeetings.find(x=>x.id===id);
+  if (!m) return;
+  activeId = id;
+  renderList(document.getElementById('searchInput').value);
+
+  document.getElementById('meetingTitle').value = m.title;
+  document.getElementById('meetingDate').value = m.date+'T'+m.time;
+  document.getElementById('attendees').value = m.attendees;
+  document.getElementById('duration').value = m.duration;
+  document.getElementById('project').value = m.project;
+  document.getElementById('notesArea').value = m.notes;
+  updateCount();
+
+  if (m.analysis) {
+    renderResults(m.analysis);
+  } else {
+    hideResults();
+  }
+  document.getElementById('rightPanel').scrollTop = 0;
+}
+
+function newAnalysis() {
+  activeId = null;
+  renderList(document.getElementById('searchInput').value);
+  document.getElementById('meetingTitle').value = '';
+  document.getElementById('meetingDate').value = '2026-03-28T10:00';
+  document.getElementById('attendees').value = '';
+  document.getElementById('duration').value = '';
+  document.getElementById('project').value = '';
+  document.getElementById('notesArea').value = '';
+  attachedFiles = [];
+  document.getElementById('attachedFiles').innerHTML = '';
+  updateCount();
+  // reset analyze button
+  const btn = document.getElementById('analyzeBtn');
+  btn.classList.remove('loading');
+  document.getElementById('analyzeBtnIcon').textContent = '✨';
+  document.getElementById('analyzeBtnText').textContent = 'Analyze Meeting';
+  // hide results, show empty state
+  document.getElementById('skeletonSection').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('advancedToggle').style.display = 'none';
+  document.getElementById('bottomActions').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('rightPanel').scrollTop = 0;
+}
+
+function clearAll() { newAnalysis(); }
+
+// ── CHAR COUNT ──
+function updateCount() {
+  const v = document.getElementById('notesArea').value.length;
+  document.getElementById('charCount').textContent = `${v} / 5000 chars`;
+}
+
+// ── FILE ATTACHMENT ──
+function handleFiles(files) {
+  [...files].forEach(f => {
+    if (attachedFiles.find(x=>x.name===f.name)) return;
+    attachedFiles.push(f);
+    renderFileTag(f);
+  });
+}
+function renderFileTag(f) {
+  const icons = {pdf:'📄',txt:'📝',docx:'📃',mp3:'🎵',m4a:'🎵',wav:'🎵'};
+  const ext = f.name.split('.').pop().toLowerCase();
+  const icon = icons[ext] || '📁';
+  const size = f.size > 1024*1024 ? (f.size/1024/1024).toFixed(1)+'MB' : Math.round(f.size/1024)+'KB';
+  const tag = document.createElement('div');
+  tag.className = 'file-tag';
+  tag.id = 'ft-'+f.name.replace(/\W/g,'');
+  tag.innerHTML = `<span class="ft-icon">${icon}</span>${f.name} <span style="color:var(--text-muted);font-size:0.7rem;">(${size})</span><span class="ft-remove" onclick="removeFile('${f.name}')">✕</span>`;
+  document.getElementById('attachedFiles').appendChild(tag);
+}
+function removeFile(name) {
+  attachedFiles = attachedFiles.filter(f=>f.name!==name);
+  const id = 'ft-'+name.replace(/\W/g,'');
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+function handleDragOver(e) { e.preventDefault(); document.getElementById('attachZone').classList.add('dragover'); }
+function handleDragLeave(e) { document.getElementById('attachZone').classList.remove('dragover'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('attachZone').classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+}
+
+// ── ANALYZE ──
+function analyzeNow() {
+  const notes = document.getElementById('notesArea').value.trim();
+  if (!notes || notes.length < 20) {
+    showToast('⚠️ Please paste at least some meeting notes first.');
+    return;
+  }
+  const title = document.getElementById('meetingTitle').value.trim() || 'Meeting Analysis';
+  const attendees = document.getElementById('attendees').value.trim();
+
+  // show loading
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('advancedToggle').style.display = 'none';
+  document.getElementById('bottomActions').style.display = 'none';
+  document.getElementById('skeletonSection').style.display = 'flex';
+  document.getElementById('skeletonSection').style.flexDirection = 'column';
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.classList.add('loading');
+  document.getElementById('analyzeBtnIcon').textContent = '⏳';
+  document.getElementById('analyzeBtnText').textContent = 'Analyzing…';
+
+  setTimeout(() => {
+    const analysis = generateAnalysis(notes, attendees, title);
+    document.getElementById('skeletonSection').style.display = 'none';
+    btn.classList.remove('loading');
+    document.getElementById('analyzeBtnIcon').textContent = '✨';
+    document.getElementById('analyzeBtnText').textContent = 'Analyze Meeting';
+    renderResults(analysis);
+
+    // save to current meeting if one is active
+    if (activeId) {
+      const m = sampleMeetings.find(x=>x.id===activeId);
+      if (m) { m.analysis = analysis; m.mood = analysis.mood; m.score = analysis.score; }
+      renderList(document.getElementById('searchInput').value);
+    }
+  }, 2200);
+}
+
+// ── SMART ANALYSIS GENERATOR ──
+function generateAnalysis(notes, attendeesStr, title) {
+  const lower = notes.toLowerCase();
+  // detect mood
+  const tenseWords = ['disagree','tension','concern','worried','conflict','aggressive','push back','strongly'];
+  const positiveWords = ['great','excellent','good progress','well done','velocity up','ahead of schedule','kudos'];
+  const tenseScore = tenseWords.filter(w=>lower.includes(w)).length;
+  const positiveScore = positiveWords.filter(w=>lower.includes(w)).length;
+  const mood = tenseScore >= 2 ? 'tense' : positiveScore >= 2 ? 'positive' : 'neutral';
+
+  // urgency
+  const urgentWords = ['asap','urgent','critical','deadline','immediately','must','blocker','overdue'];
+  const urgencyCount = urgentWords.filter(w=>lower.includes(w)).length;
+  const urgency = urgencyCount >= 3 ? 'High' : urgencyCount >= 1 ? 'Medium' : 'Low';
+
+  // conflict
+  const hasConflict = tenseScore >= 2;
+  const conflictNote = hasConflict ? 'Disagreement detected around deadline feasibility and resource allocation.' : null;
+
+  // parse attendees
+  const atts = attendeesStr ? attendeesStr.split(',').map(a=>a.trim()).filter(Boolean) : ['Team'];
+
+  // extract decisions (look for "Decisions:" section or sentences with "decided", "agreed")
+  let decisions = [];
+  const decMatch = notes.match(/decisions?:([^]*?)(?=\n[A-Z]|$)/i);
+  if (decMatch) {
+    decisions = decMatch[1].split(/[.\n]+/).map(d=>d.replace(/^[-•*]\s*/,'').trim()).filter(d=>d.length>8).slice(0,5);
+  }
+  if (!decisions.length) {
+    if (lower.includes('release')) decisions.push('Release date confirmed — core features by May 10.');
+    if (lower.includes('logging')) decisions.push('New logging framework to be adopted, led by Ravi.');
+    if (lower.includes('onboarding')) decisions.push('Onboarding documentation update assigned to Alice.');
+    decisions.push('Async standups to replace daily sync meetings going forward.');
+  }
+
+  // action items
+  const actionItems = [
+    { task:'Implement new logging framework', owner: pickOwner(atts,0), due:'April 15', urgent:true, checked:true },
+    { task:'Write updated onboarding documentation', owner: pickOwner(atts,1), due:'April 20', urgent:false, checked:true },
+    { task:'Schedule client sync call', owner: pickOwner(atts,2), due:'March 31', urgent:true, checked:true },
+    { task:'Review CI/CD pipeline bottleneck', owner: pickOwner(atts,3), due:'April 12', urgent:false, checked:false },
+    { task:'Prepare release notes for May 10 drop', owner: pickOwner(atts,0), due:'May 5', urgent:false, checked:false },
+  ];
+
+  // workload
+  const ownerCounts = {};
+  actionItems.forEach(a => { ownerCounts[a.owner] = (ownerCounts[a.owner]||0)+1; });
+  const maxOwner = Object.entries(ownerCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  // score
+  const score = mood==='positive' ? 4.1 : mood==='tense' ? 3.1 : 3.7;
+
+  return {
+    title, mood, urgency, hasConflict, conflictNote, decisions, actionItems,
+    attendees: atts, ownerCounts, maxOwner, score, notes,
+    summary: buildSummary(notes, atts, title),
+    qualityFeedback: buildQualityFeedback(mood, urgency, actionItems.length, atts.length, score),
+  };
+}
+
+function pickOwner(atts, idx) { return atts[idx % atts.length] || 'TBD'; }
+
+function buildSummary(notes, atts, title) {
+  const n = notes.length;
+  return `The "${title}" meeting covered sprint progress, upcoming release planning, and team workload distribution. The ${atts.length} attendees reviewed Q1 velocity, discussed timeline concerns, and aligned on key deliverables for Q2. Several action items were assigned with deadlines ranging from end of March through May. Notable tensions arose around deadline feasibility, though a consensus was reached with a phased delivery approach.`;
+}
+
+function buildQualityFeedback(mood, urgency, taskCount, attCount, score) {
+  const fb = [];
+  if (mood==='tense') fb.push({ icon:'⚠️', text:'Meeting had visible tension — consider pre-aligning stakeholders before next sprint planning to reduce conflict.' });
+  if (attCount > 5) fb.push({ icon:'👥', text:'Large group ('+attCount+' attendees) may have slowed decision-making. Consider splitting into smaller focused sessions.' });
+  if (taskCount > 4) fb.push({ icon:'📋', text:'High number of action items ('+taskCount+') generated — ensure clear ownership and realistic deadlines to avoid overload.' });
+  if (urgency==='High') fb.push({ icon:'🔥', text:'Multiple urgent items flagged. Follow up within 24 hours to unblock dependencies.' });
+  fb.push({ icon:'✅', text:'Clear decisions were captured and owners assigned. Good meeting hygiene overall.' });
+  return fb;
+}
+
+// ── RENDER RESULTS ──
+function renderResults(a) {
+  const rs = document.getElementById('resultsSection');
+  rs.style.display = 'flex';
+  rs.innerHTML = `
+    <!-- SUMMARY -->
+    <div class="result-card">
+      <div class="rc-header">
+        <div class="rc-title">📝 Summary</div>
+        <span class="rc-action" onclick="copyText('${escJ(a.summary)}')">Copy</span>
+      </div>
+      <div class="rc-body">
+        <p class="summary-text">${a.summary}</p>
+      </div>
+    </div>
+
+    <!-- DECISIONS -->
+    <div class="result-card">
+      <div class="rc-header">
+        <div class="rc-title">🏛️ Key Decisions</div>
+        <span class="rc-action">${a.decisions.length} decisions</span>
+      </div>
+      <div class="rc-body">
+        <div class="decision-list">
+          ${a.decisions.map((d,i)=>`
+            <div class="decision-item">
+              <div class="di-bullet">${i+1}</div>
+              <div>${d}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTION ITEMS -->
+    <div class="result-card">
+      <div class="rc-header">
+        <div class="rc-title">✅ Action Items</div>
+        <span class="rc-action">${a.actionItems.length} tasks</span>
+      </div>
+      <div class="rc-body" style="padding:0;">
+        <table class="action-table">
+          <thead>
+            <tr>
+              <th class="action-cb-col"></th>
+              <th>Task</th>
+              <th>Owner</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${a.actionItems.map((item,i)=>`
+              <tr>
+                <td class="action-cb-col"><input type="checkbox" ${item.checked?'checked':''} id="ai-cb-${i}"></td>
+                <td>${item.task}</td>
+                <td><span class="owner-tag">👤 ${item.owner}</span></td>
+                <td><span class="due-tag ${item.urgent?'urgent':''}">${item.urgent?'⚡ ':''} ${item.due}</span></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="action-footer">
+        <button class="btn-tasks" onclick="createTasks()">🚀 Create Tasks in Project Board</button>
+      </div>
+    </div>
+
+    <!-- MOOD & URGENCY -->
+    <div class="result-card">
+      <div class="rc-header">
+        <div class="rc-title">🌡️ Meeting Mood & Urgency</div>
+      </div>
+      <div class="rc-body">
+        <div class="mood-urgency-grid">
+          <div class="mu-card">
+            <div class="mu-label">Overall Mood</div>
+            <div class="mu-value ${a.mood}">${moodIcon2(a.mood)} ${cap(a.mood)}</div>
+            <div class="mu-sub">Based on language tone and sentiment patterns</div>
+          </div>
+          <div class="mu-card">
+            <div class="mu-label">Urgency Level</div>
+            <div class="mu-value ${a.urgency.toLowerCase()}">${urgIcon(a.urgency)} ${a.urgency}</div>
+            <div class="mu-sub">Detected from deadlines, blockers, critical flags</div>
+          </div>
+          <div class="mu-card">
+            <div class="mu-label">Conflict Signal</div>
+            <div class="mu-value" style="color:${a.hasConflict?'var(--accent-red)':'var(--accent-green)'};font-size:0.95rem;">
+              ${a.hasConflict ? '⚡ Detected' : '✅ None'}
+            </div>
+            <div class="mu-sub">${a.hasConflict ? 'Tension markers found in transcript' : 'No significant disagreements detected'}</div>
+          </div>
+        </div>
+        ${a.hasConflict ? `<div class="conflict-box">⚠️ &nbsp;<span>${a.conflictNote}</span></div>` : ''}
+      </div>
+    </div>
+
+    <!-- PARTICIPATION & WORKLOAD -->
+    <div class="result-card" id="advSection1">
+      <div class="rc-header">
+        <div class="rc-title">👥 Participation & Workload Impact</div>
+      </div>
+      <div class="rc-body">
+        <div class="participation-grid">
+          <div class="part-item">
+            <div class="part-label">Attendance</div>
+            <div class="part-stat">${a.attendees.length}</div>
+            <div class="part-sub">Total attendees</div>
+            <div style="margin-top:8px;font-size:0.78rem;color:var(--text-muted);">
+              ${a.attendees.join(' · ')}
+            </div>
+          </div>
+          <div class="part-item">
+            <div class="part-label">Active Speakers</div>
+            <div class="part-stat">${Math.min(a.attendees.length, Math.floor(a.attendees.length*0.75)+1)}</div>
+            <div class="part-sub">Inferred from transcript mentions</div>
+          </div>
+        </div>
+        <div class="workload-rows">
+          ${Object.entries(a.ownerCounts).map(([name,count])=>`
+            <div class="wl-row">
+              <div class="wl-name">${name}</div>
+              <div class="wl-bar-wrap"><div class="wl-bar" style="width:${Math.min(100,(count/5)*100)}%"></div></div>
+              <div class="wl-count">+${count} task${count>1?'s':''}</div>
+            </div>`).join('')}
+        </div>
+        <div class="wl-most">
+          💼 Most new work from this meeting goes to <strong>${a.maxOwner[0]}</strong> (${a.maxOwner[1]} tasks). Consider redistributing if they're already at high capacity.
+        </div>
+      </div>
+    </div>
+
+    <!-- MEETING QUALITY -->
+    <div class="result-card" id="advSection2">
+      <div class="rc-header">
+        <div class="rc-title">⭐ Meeting Quality</div>
+      </div>
+      <div class="rc-body">
+        <div class="quality-score-wrap">
+          <div>
+            <div style="display:flex;align-items:baseline;gap:4px;">
+              <span class="quality-score-num">${a.score.toFixed(1)}</span>
+              <span class="quality-score-denom">/5</span>
+            </div>
+            <div class="quality-stars">
+              ${renderStars(a.score)}
+            </div>
+            <div class="quality-label">${qualLabel(a.score)}</div>
+          </div>
+        </div>
+        <div class="quality-bar-wrap">
+          <div class="quality-bar-track">
+            <div class="quality-bar-fill" style="width:${(a.score/5)*100}%"></div>
+          </div>
+        </div>
+        <div class="quality-feedback">
+          ${a.qualityFeedback.map(f=>`
+            <div class="qf-item">
+              <span class="qf-icon">${f.icon}</span>
+              <span>${f.text}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('advancedToggle').style.display = 'flex';
+  document.getElementById('bottomActions').style.display = 'flex';
+  document.getElementById('savedTag').classList.remove('visible');
+
+  // animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.wl-bar').forEach(b => {
+      const target = b.style.width;
+      b.style.width = '0%';
+      setTimeout(()=>b.style.width=target, 100);
+    });
+    const qbar = document.querySelector('.quality-bar-fill');
+    if (qbar) {
+      const target = qbar.style.width;
+      qbar.style.width = '0%';
+      setTimeout(()=>qbar.style.width=target, 100);
+    }
+  }, 50);
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('skeletonSection').style.display = 'none';
+}
+
+function hideResults() {
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('advancedToggle').style.display = 'none';
+  document.getElementById('bottomActions').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'flex';
+  showAdvanced = false;
+  document.getElementById('advSwitch').classList.remove('on');
+}
+
+function moodIcon2(m) { return {positive:'😊',neutral:'😐',tense:'😤',mixed:'🤔'}[m]||'😐'; }
+function urgIcon(u) { return {High:'🔥',Medium:'⚡',Low:'✅'}[u]||'✅'; }
+function qualLabel(s) { return s>=4.5?'Excellent meeting':s>=3.8?'Very effective':s>=3.0?'Moderately effective':'Needs improvement'; }
+
+function renderStars(score) {
+  let html = '';
+  for(let i=1;i<=5;i++) {
+    if (score >= i) html += '<span class="qs">⭐</span>';
+    else if (score >= i-0.5) html += '<span class="qs" style="opacity:0.5">⭐</span>';
+    else html += '<span class="qs" style="opacity:0.15">⭐</span>';
+  }
+  return html;
+}
+
+function escJ(s) { return (s||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;').replace(/\n/g,' '); }
+
+// ── ADVANCED TOGGLE ──
+function toggleAdvanced() {
+  showAdvanced = !showAdvanced;
+  const sw = document.getElementById('advSwitch');
+  sw.classList.toggle('on', showAdvanced);
+  const s1 = document.getElementById('advSection1');
+  const s2 = document.getElementById('advSection2');
+  if (s1) { s1.style.display = showAdvanced ? 'block' : 'none'; }
+  if (s2) { s2.style.display = showAdvanced ? 'block' : 'none'; }
+}
+
+// init advanced sections visible by default
+function initAdvanced() {
+  showAdvanced = true;
+  document.getElementById('advSwitch').classList.add('on');
+}
+
+// ── COPY ──
+function copySummary() {
+  const res = document.getElementById('resultsSection');
+  if (!res || res.style.display==='none') { showToast('⚠️ Nothing to copy yet.'); return; }
+  const text = res.innerText.replace(/\n{3,}/g,'\n\n');
+  navigator.clipboard.writeText(text).then(()=>showToast('📋 Summary copied to clipboard!'));
+}
+function copyText(t) {
+  navigator.clipboard.writeText(t).then(()=>showToast('📋 Copied!'));
+}
+
+// ── SAVE ──
+function saveMeeting() {
+  const title = document.getElementById('meetingTitle').value || 'Untitled Meeting';
+  if (!document.getElementById('resultsSection').style.display || document.getElementById('resultsSection').style.display==='none') {
+    showToast('⚠️ Analyze the meeting first.'); return;
+  }
+  // Add to sample list if not already there
+  if (!activeId) {
+    const newId = Date.now();
+    const mood = document.getElementById('resultsSection').innerHTML.includes('tense') ? 'tense' :
+                 document.getElementById('resultsSection').innerHTML.includes('positive') ? 'positive' : 'neutral';
+    sampleMeetings.unshift({
+      id:newId, title, date:'2026-03-28', time:'10:00',
+      duration: document.getElementById('duration').value || '45 min',
+      mood, score:3.5, project: document.getElementById('project').value || 'General',
+      attendees: document.getElementById('attendees').value, notes:'', analysis:null
+    });
+    activeId = newId;
+    renderList(document.getElementById('searchInput').value);
+  }
+  document.getElementById('savedTag').classList.add('visible');
+  showToast('💾 Meeting analysis saved!');
+}
+
+// ── CREATE TASKS ──
+function createTasks() {
+  const checked = document.querySelectorAll('[id^="ai-cb-"]:checked').length;
+  showToast(`🚀 ${checked} task${checked!==1?'s':''} pushed to Project Board!`);
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── INIT ──
+renderList();
+// Auto-load first meeting
+loadMeeting(1);
+initAdvanced();
+</script>
+</body>
+</html>

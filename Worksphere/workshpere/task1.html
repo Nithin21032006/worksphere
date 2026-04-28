@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Manager — WorkSphere</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d14;--surface:#111520;--surface2:#161b2e;
+  --border:rgba(255,255,255,0.07);
+  --blue:#4f8ef7;--purple:#a78bfa;--green:#34d399;
+  --orange:#fb923c;--red:#f87171;--pink:#f472b6;
+  --text:#e8eaf0;--muted:#6b7280;--dim:#374151;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(79,142,247,.09) 0%,transparent 55%),radial-gradient(ellipse 55% 45% at 90% 100%,rgba(167,139,250,.07) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+/* ── TOPBAR ── */
+.topbar{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:rgba(11,13,20,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);flex-shrink:0}
+.tb-left{display:flex;align-items:center;gap:14px;margin-left:110px}
+.back-btn{position:absolute;left:24px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:5px;color:var(--muted);text-decoration:none;font-size:.82rem;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.04);transition:all .2s;white-space:nowrap;z-index:21}
+.back-btn:hover{color:var(--text);background:rgba(255,255,255,.08)}
+.vdiv{width:1px;height:18px;background:var(--border)}
+.mod-badge{display:flex;align-items:center;gap:9px}
+.mod-ico{width:28px;height:28px;border-radius:7px;background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.2);display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.mod-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:#fff}
+.mod-sub{font-size:.68rem;color:var(--muted)}
+.tb-right{display:flex;align-items:center;gap:10px}
+.add-task-btn{display:flex;align-items:center;gap:6px;background:var(--blue);border:none;color:#fff;padding:7px 14px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;box-shadow:0 0 18px rgba(79,142,247,.3)}
+.add-task-btn:hover{background:#6a9ef9;box-shadow:0 0 26px rgba(79,142,247,.5);transform:translateY(-1px)}
+.ai-btn{display:flex;align-items:center;gap:6px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);color:#a78bfa;padding:7px 13px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s}
+.ai-btn:hover{background:rgba(167,139,250,.22)}
+.ai-btn.spinning .ai-ico{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MAIN ── */
+.main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── SUMMARY STRIP ── */
+.summary-strip{display:flex;gap:12px;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.summary-strip::-webkit-scrollbar{height:0}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 18px;min-width:130px;flex-shrink:0;transition:border-color .2s}
+.sum-card:hover{border-color:var(--c,var(--border))}
+.sum-num{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;line-height:1;color:var(--c,#fff)}
+.sum-label{font-size:.72rem;color:var(--muted);margin-top:3px}
+.sum-sub{font-size:.65rem;color:var(--dim);margin-top:1px}
+
+/* progress ring */
+.ring-card{display:flex;align-items:center;gap:14px}
+.ring-card canvas{width:52px!important;height:52px!important}
+.ring-info .sum-num{font-size:1.2rem}
+
+/* ── BODY ── */
+.body-wrap{flex:1;display:flex;overflow:hidden}
+
+/* ── LEFT: TASK LIST ── */
+.task-col{width:55%;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden}
+
+/* Tabs + toolbar */
+.task-toolbar{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:3px}
+.tab{padding:5px 13px;border-radius:6px;font-size:.75rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .18s}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.filter-select{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:7px;font-size:.73rem;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer}
+.spacer{flex:1}
+.sort-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:7px;font-size:.73rem;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .18s}
+.sort-btn:hover{background:var(--surface);color:var(--text)}
+
+/* Scheduling hint */
+.schedule-hint{margin:10px 18px 0;background:rgba(79,142,247,.07);border:1px solid rgba(79,142,247,.18);border-radius:10px;padding:10px 14px;display:none;font-size:.78rem;color:#93c5fd;line-height:1.6;animation:fadeIn .3s ease}
+.schedule-hint.show{display:block}
+.schedule-hint strong{color:#4f8ef7}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Task list */
+.task-list{flex:1;overflow-y:auto;padding:10px 14px 20px}
+.task-list::-webkit-scrollbar{width:3px}
+.task-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px}
+
+/* Task card */
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:8px;cursor:pointer;transition:all .22s;position:relative;animation:cardIn .28s ease both}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.task-card:hover{border-color:rgba(255,255,255,.12);transform:translateY(-1px)}
+.task-card.active-focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(79,142,247,.15);background:#0f1828}
+.task-card.completed-card{opacity:.5}
+.task-card.overdue-card{border-left:3px solid var(--red)}
+.task-card.dep-blocked{border-left:3px solid var(--orange);opacity:.75}
+
+.tc-top{display:flex;align-items:flex-start;gap:10px}
+.tc-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--dim);cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.tc-check.done{background:var(--green);border-color:var(--green)}
+.tc-check.done::after{content:'✓';font-size:.65rem;color:#fff;font-weight:700}
+.tc-check:hover:not(.done){border-color:var(--green);background:rgba(52,211,153,.1)}
+
+.tc-body{flex:1;min-width:0}
+.tc-title{font-size:.87rem;font-weight:500;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:7px}
+.tc-title.crossed{text-decoration:line-through;color:var(--muted)}
+.tc-desc{font-size:.75rem;color:var(--muted);line-height:1.5;margin-bottom:7px}
+.tc-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+
+.pri-tag{font-size:.62rem;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:.02em}
+.pri-tag.critical{background:rgba(248,113,113,.15);color:#f87171}
+.pri-tag.high{background:rgba(251,146,60,.12);color:#fb923c}
+.pri-tag.medium{background:rgba(79,142,247,.12);color:#4f8ef7}
+.pri-tag.low{background:rgba(107,114,128,.12);color:#9ca3af}
+
+.proj-tag{font-size:.62rem;padding:2px 7px;border-radius:4px;background:rgba(167,139,250,.1);color:#a78bfa}
+.due-tag{font-size:.62rem;color:var(--muted);display:flex;align-items:center;gap:3px}
+.due-tag.overdue{color:var(--red)}
+.due-tag.soon{color:var(--orange)}
+.est-tag{font-size:.62rem;color:var(--dim)}
+
+/* dep warning */
+.dep-warn{margin-top:6px;font-size:.7rem;color:var(--orange);background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.15);border-radius:5px;padding:4px 8px;display:flex;align-items:center;gap:5px}
+
+/* focus badge */
+.focus-badge{position:absolute;top:10px;right:10px;font-size:.62rem;background:rgba(79,142,247,.15);border:1px solid rgba(79,142,247,.3);color:#4f8ef7;padding:2px 8px;border-radius:100px;display:none}
+.task-card.active-focus .focus-badge{display:block}
+
+.tc-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.tc-btn{padding:4px 9px;border-radius:5px;font-size:.67rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .18s}
+.tc-btn:hover{background:var(--surface2);color:var(--text)}
+.tc-btn.focus-btn{border-color:rgba(79,142,247,.3);color:var(--blue)}
+.tc-btn.focus-btn.active{background:rgba(79,142,247,.15)}
+
+/* empty state */
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty-state .ei{font-size:2rem;margin-bottom:10px}
+.empty-state p{font-size:.82rem;line-height:1.7}
+
+/* ── RIGHT: ANALYTICS ── */
+.analytics-col{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:16px 18px;gap:14px}
+.analytics-col::-webkit-scrollbar{width:3px}
+.analytics-col::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px}
+
+.section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;color:#fff;letter-spacing:-.01em;margin-bottom:10px}
+
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.chart-card canvas{max-height:170px}
+
+/* weekly win */
+.win-card{background:linear-gradient(135deg,rgba(52,211,153,.08),rgba(79,142,247,.06));border:1px solid rgba(52,211,153,.18);border-radius:14px;padding:16px}
+.win-card .wt{font-size:.72rem;font-weight:600;color:var(--green);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.win-card p{font-size:.82rem;color:#d1fae5;line-height:1.6}
+
+/* AI insight */
+.ai-insight{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.15);border-radius:14px;padding:14px;font-size:.78rem;color:#c4b5fd;line-height:1.7}
+.ai-insight .ai-hdr{display:flex;align-items:center;gap:7px;font-weight:600;color:#a78bfa;margin-bottom:7px;font-size:.78rem}
+
+/* focus timer */
+.focus-timer{background:rgba(79,142,247,.07);border:1px solid rgba(79,142,247,.2);border-radius:14px;padding:14px;display:none}
+.focus-timer.active{display:block;animation:fadeIn .3s ease}
+.ft-title{font-size:.72rem;font-weight:600;color:var(--blue);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.ft-task{font-size:.85rem;color:#fff;font-weight:500;margin-bottom:10px}
+.ft-clock{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--blue);letter-spacing:.04em;margin-bottom:10px}
+.ft-actions{display:flex;gap:8px}
+.ft-btn{flex:1;padding:7px;border-radius:8px;font-size:.75rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .2s}
+.ft-btn.stop{background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.25)}
+.ft-btn.stop:hover{background:rgba(248,113,113,.25)}
+.ft-btn.done{background:var(--green);color:#fff}
+.ft-btn.done:hover{background:#6ee7b7;color:#0b0d14}
+
+/* toast */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:10px;font-size:.82rem;font-weight:500;opacity:0;transform:translateY(16px);transition:all .3s;white-space:nowrap}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{border-color:rgba(52,211,153,.3);color:#34d399}
+.toast.ai{border-color:rgba(167,139,250,.3);color:#c4b5fd}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:#111520;border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:28px 26px;width:100%;max-width:500px;animation:modalIn .22s ease both;max-height:90vh;overflow-y:auto}
+@keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:#fff;margin-bottom:16px;letter-spacing:-.02em}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mfield{margin-bottom:13px}
+.mfield label{display:block;font-size:.76rem;font-weight:500;color:#c9ccd4;margin-bottom:5px}
+.mfield input,.mfield select,.mfield textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:.83rem;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s}
+.mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:rgba(79,142,247,.4)}
+.mfield input::placeholder,.mfield textarea::placeholder{color:var(--dim)}
+.mfield select option{background:#111520}
+.mfield textarea{resize:vertical;min-height:60px}
+.modal-actions{display:flex;gap:9px;margin-top:16px}
+.m-btn{flex:1;padding:9px;border-radius:8px;font-size:.875rem;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.m-btn.pri{background:var(--blue);color:#fff}
+.m-btn.pri:hover{background:#6a9ef9}
+.m-btn.gho{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.m-btn.gho:hover{background:var(--surface2);color:var(--text)}
+
+/* meeting import chip */
+.meeting-chip{display:flex;align-items:center;gap:8px;background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.18);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:.76rem;color:#34d399;cursor:pointer;transition:background .2s}
+.meeting-chip:hover{background:rgba(52,211,153,.13)}
+
+@media(max-width:780px){
+  .body-wrap{flex-direction:column}
+  .task-col{width:100%;border-right:none;border-bottom:1px solid var(--border)}
+  .analytics-col{max-height:420px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <a href="module.html" class="back-btn">← Go Back</a>
+    <div class="vdiv"></div>
+    <div class="mod-badge">
+      <div class="mod-ico">✅</div>
+      <div>
+        <div class="mod-name">Task Manager</div>
+        <div class="mod-sub">AI-Assisted · Personalized</div>
+      </div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <button class="ai-btn" id="cleanup-btn" onclick="aiCleanup()"><span class="ai-ico">✦</span> Clean up tasks</button>
+    <button class="ai-btn" id="prioritize-btn" onclick="aiPrioritize()"><span class="ai-ico">⚡</span> Prioritize my day</button>
+    <button class="add-task-btn" onclick="openModal()">+ New Task</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip">
+    <div class="sum-card" style="--c:var(--blue)">
+      <div class="sum-num" id="s-total">0</div>
+      <div class="sum-label">Total tasks</div>
+      <div class="sum-sub">this week</div>
+    </div>
+    <div class="sum-card" style="--c:var(--green)">
+      <div class="sum-num" id="s-done">0</div>
+      <div class="sum-label">Completed</div>
+      <div class="sum-sub" id="s-done-sub">today</div>
+    </div>
+    <div class="sum-card" style="--c:var(--red)">
+      <div class="sum-num" id="s-overdue">0</div>
+      <div class="sum-label">Overdue</div>
+      <div class="sum-sub">need attention</div>
+    </div>
+    <div class="sum-card" style="--c:var(--orange)">
+      <div class="sum-num" id="s-pending">0</div>
+      <div class="sum-label">Pending</div>
+      <div class="sum-sub">in progress</div>
+    </div>
+    <div class="sum-card ring-card">
+      <canvas id="ring-chart"></canvas>
+      <div class="ring-info">
+        <div class="sum-num" id="s-pct" style="color:var(--green)">0%</div>
+        <div class="sum-label">Done rate</div>
+      </div>
+    </div>
+    <div class="sum-card" style="--c:var(--purple)">
+      <div class="sum-num" id="s-hours">0h</div>
+      <div class="sum-label">Est. remaining</div>
+      <div class="sum-sub">this week</div>
+    </div>
+  </div>
+
+  <div class="body-wrap">
+    <!-- ══ LEFT: TASK LIST ══ -->
+    <div class="task-col">
+      <div class="task-toolbar">
+        <div class="tabs">
+          <button class="tab active" onclick="setTab('today',this)">Today</button>
+          <button class="tab" onclick="setTab('week',this)">This Week</button>
+          <button class="tab" onclick="setTab('overdue',this)">Overdue</button>
+          <button class="tab" onclick="setTab('all',this)">All</button>
+        </div>
+        <select class="filter-select" id="proj-filter" onchange="renderTasks()">
+          <option value="">All Projects</option>
+        </select>
+        <select class="filter-select" id="pri-filter" onchange="renderTasks()">
+          <option value="">All Priorities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="sort-btn" onclick="toggleSort()">⇅ <span id="sort-label">Due date</span></button>
+      </div>
+
+      <div class="schedule-hint" id="schedule-hint"></div>
+
+      <div class="task-list" id="task-list"></div>
+    </div>
+
+    <!-- ══ RIGHT: ANALYTICS ══ -->
+    <div class="analytics-col">
+
+      <!-- Focus Timer -->
+      <div class="focus-timer" id="focus-timer">
+        <div class="ft-title">🎯 Focus Session</div>
+        <div class="ft-task" id="ft-task-name">—</div>
+        <div class="ft-clock" id="ft-clock">00:00</div>
+        <div class="ft-actions">
+          <button class="ft-btn stop" onclick="stopFocus()">✕ Stop</button>
+          <button class="ft-btn done" onclick="focusDone()">✓ Mark Done</button>
+        </div>
+      </div>
+
+      <!-- Weekly Win -->
+      <div class="win-card" id="win-card">
+        <div class="wt">🏆 Weekly Win</div>
+        <p id="win-text">Loading your progress…</p>
+      </div>
+
+      <!-- AI Insight -->
+      <div class="ai-insight" id="ai-insight">
+        <div class="ai-hdr">✦ AI Insight</div>
+        <span id="ai-insight-text">Click <strong>Prioritize my day</strong> to get a smart schedule and workload advice.</span>
+      </div>
+
+      <!-- Daily Progress Chart -->
+      <div class="chart-card">
+        <div class="section-title">Daily completion — this week</div>
+        <canvas id="bar-chart"></canvas>
+      </div>
+
+      <!-- Priority Breakdown -->
+      <div class="chart-card">
+        <div class="section-title">Tasks by priority</div>
+        <canvas id="doughnut-chart"></canvas>
+      </div>
+
+      <!-- Project Progress -->
+      <div class="chart-card">
+        <div class="section-title">Project progress</div>
+        <div id="proj-progress"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- ADD TASK MODAL -->
+<div class="overlay" id="overlay" onclick="closeOutside(event)">
+  <div class="modal">
+    <div class="modal-title">New Task</div>
+
+    <div class="meeting-chip" onclick="importFromMeeting()">
+      🎥 Import from Meeting Intelligence — 3 action items available
+    </div>
+
+    <div class="mfield">
+      <label>Task title *</label>
+      <input type="text" id="m-title" placeholder="e.g. Review Q2 design specs">
+    </div>
+    <div class="mfield">
+      <label>Description</label>
+      <textarea id="m-desc" placeholder="Optional details…"></textarea>
+    </div>
+    <div class="mrow">
+      <div class="mfield">
+        <label>Project</label>
+        <input type="text" id="m-proj" placeholder="e.g. WorkSphere v2" list="proj-list">
+        <datalist id="proj-list"></datalist>
+      </div>
+      <div class="mfield">
+        <label>Owner</label>
+        <input type="text" id="m-owner" value="John Doe">
+      </div>
+    </div>
+    <div class="mrow">
+      <div class="mfield">
+        <label>Priority</label>
+        <select id="m-pri">
+          <option value="critical">🔴 Critical</option>
+          <option value="high">🟠 High</option>
+          <option value="medium" selected>🔵 Medium</option>
+          <option value="low">⚪ Low</option>
+        </select>
+      </div>
+      <div class="mfield">
+        <label>Due date</label>
+        <input type="date" id="m-due">
+      </div>
+    </div>
+    <div class="mrow">
+      <div class="mfield">
+        <label>Estimated time (hrs)</label>
+        <input type="number" id="m-est" placeholder="e.g. 2" min="0.5" step="0.5">
+      </div>
+      <div class="mfield">
+        <label>Depends on task</label>
+        <select id="m-dep">
+          <option value="">None</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="m-btn gho" onclick="closeModal()">Cancel</button>
+      <button class="m-btn pri" onclick="addTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════ DATA ═══════════════════ */
+const today = new Date();
+const d = (offset=0) => { const dt=new Date(today); dt.setDate(dt.getDate()+offset); return dt.toISOString().split('T')[0]; };
+
+let tasks = [
+  {id:1,title:'Review Q2 design specs',desc:'Go through Figma files and leave feedback',proj:'WorkSphere v2',owner:'John Doe',pri:'high',status:'pending',due:d(0),est:2,created:d(-3),completed_at:null,dep:null},
+  {id:2,title:'Fix auth bug in login flow',desc:'JWT token not refreshing properly on expiry',proj:'WorkSphere v2',owner:'John Doe',pri:'critical',status:'pending',due:d(-1),est:3,created:d(-5),completed_at:null,dep:null},
+  {id:3,title:'Write deployment runbook',desc:'Document steps for production release',proj:'DevOps',owner:'John Doe',pri:'medium',status:'completed',due:d(-2),est:1.5,created:d(-7),completed_at:d(-1),dep:null},
+  {id:4,title:'Conduct intern interviews',desc:'Panel interview for 3 backend intern candidates',proj:'Hiring',owner:'John Doe',pri:'high',status:'pending',due:d(1),est:2,created:d(-2),completed_at:null,dep:null},
+  {id:5,title:'Update API documentation',desc:'Swagger docs for the new endpoints',proj:'WorkSphere v2',owner:'John Doe',pri:'medium',status:'pending',due:d(3),est:1,created:d(-1),completed_at:null,dep:2},
+  {id:6,title:'Monthly team retrospective',desc:'Facilitate the retro session and capture action items',proj:'Team Ops',owner:'John Doe',pri:'medium',status:'completed',due:d(-3),est:1.5,created:d(-10),completed_at:d(-3),dep:null},
+  {id:7,title:'Migrate DB schema for v2.1',desc:'Run migration scripts on staging first',proj:'DevOps',owner:'John Doe',pri:'critical',status:'pending',due:d(-2),est:4,created:d(-4),completed_at:null,dep:null},
+  {id:8,title:'Prepare Q2 OKR slides',desc:'Deck for all-hands presentation',proj:'Team Ops',owner:'John Doe',pri:'low',status:'pending',due:d(6),est:2,created:d(0),completed_at:null,dep:null},
+  {id:9,title:'Set up monitoring alerts',desc:'Grafana + PagerDuty for prod services',proj:'DevOps',owner:'John Doe',pri:'high',status:'completed',due:d(0),est:1,created:d(-6),completed_at:d(0),dep:null},
+  {id:10,title:'Draft product roadmap email',desc:'Summary to share with stakeholders',proj:'WorkSphere v2',owner:'John Doe',pri:'medium',status:'pending',due:d(2),est:1,created:d(0),completed_at:null,dep:8},
+];
+
+let nextId = 11;
+let currentTab = 'today';
+let sortMode = 'due'; // due | priority | est
+let focusTaskId = null;
+let focusInterval = null;
+let focusSeconds = 0;
+let aiPriorityOrder = null; // null or array of ids in priority order
+
+/* ═══════════════════ HELPERS ═══════════════════ */
+function isToday(dateStr) {
+  return dateStr === d(0);
+}
+function isThisWeek(dateStr) {
+  const dt = new Date(dateStr), start = new Date(today), end = new Date(today);
+  start.setDate(today.getDate() - today.getDay());
+  end.setDate(start.getDate() + 6);
+  return dt >= start && dt <= end;
+}
+function isOverdue(task) {
+  return task.status !== 'completed' && task.due < d(0);
+}
+function daysOverdue(task) {
+  const diff = Math.floor((new Date(d(0)) - new Date(task.due)) / 86400000);
+  return diff;
+}
+function dueLabel(task) {
+  if (task.status === 'completed') return '✓ Done';
+  if (task.due === d(0)) return '⏰ Due today';
+  if (task.due === d(1)) return '📅 Due tomorrow';
+  if (task.due < d(0)) return `⚠️ ${daysOverdue(task)}d overdue`;
+  const diff = Math.floor((new Date(task.due) - new Date(d(0))) / 86400000);
+  return `📅 Due in ${diff}d`;
+}
+function priScore(t) {
+  const p = {critical:4,high:3,medium:2,low:1}[t.pri]||1;
+  const urgency = isOverdue(t) ? 10 : (t.due === d(0) ? 5 : t.due === d(1) ? 3 : 1);
+  return p * urgency;
+}
+function getDepTask(id) { return id ? tasks.find(t=>t.id===id) : null; }
+function isBlocked(task) {
+  const dep = getDepTask(task.dep);
+  return dep && dep.status !== 'completed';
+}
+
+/* ═══════════════════ FILTERS ═══════════════════ */
+function getFilteredTasks() {
+  const proj = document.getElementById('proj-filter').value;
+  const pri  = document.getElementById('pri-filter').value;
+  let list = [...tasks];
+
+  // tab filter
+  if (currentTab === 'today')   list = list.filter(t => isToday(t.due) || (t.status==='pending' && isOverdue(t)));
+  if (currentTab === 'week')    list = list.filter(t => isThisWeek(t.due));
+  if (currentTab === 'overdue') list = list.filter(t => isOverdue(t));
+
+  if (proj) list = list.filter(t => t.proj === proj);
+  if (pri)  list = list.filter(t => t.pri === pri);
+
+  // sort
+  if (aiPriorityOrder) {
+    list.sort((a,b) => {
+      const ai = aiPriorityOrder.indexOf(a.id);
+      const bi = aiPriorityOrder.indexOf(b.id);
+      if (ai===-1&&bi===-1) return 0;
+      if (ai===-1) return 1;
+      if (bi===-1) return -1;
+      return ai - bi;
+    });
+  } else if (sortMode === 'due') {
+    list.sort((a,b) => {
+      if (a.status==='completed' && b.status!=='completed') return 1;
+      if (b.status==='completed' && a.status!=='completed') return -1;
+      return a.due.localeCompare(b.due);
+    });
+  } else if (sortMode === 'priority') {
+    list.sort((a,b) => priScore(b) - priScore(a));
+  } else if (sortMode === 'est') {
+    list.sort((a,b) => (a.est||0) - (b.est||0));
+  }
+
+  return list;
+}
+
+/* ═══════════════════ RENDER ═══════════════════ */
+function renderTasks() {
+  const list = getFilteredTasks();
+  const el = document.getElementById('task-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="ei">🎉</div><p>No tasks here.<br>You're all caught up!</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map((t,i) => {
+    const dep = getDepTask(t.dep);
+    const blocked = isBlocked(t);
+    const overdue = isOverdue(t);
+    const cls = [
+      'task-card',
+      t.status==='completed'?'completed-card':'',
+      overdue&&t.status!=='completed'?'overdue-card':'',
+      blocked?'dep-blocked':'',
+      focusTaskId===t.id?'active-focus':'',
+    ].filter(Boolean).join(' ');
+
+    return `
+    <div class="${cls}" style="animation-delay:${i*0.04}s" onclick="cardClick(event,${t.id})">
+      <span class="focus-badge">🎯 Focus</span>
+      <div class="tc-top">
+        <div class="tc-check ${t.status==='completed'?'done':''}" onclick="event.stopPropagation();toggleTask(${t.id})"></div>
+        <div class="tc-body">
+          <div class="tc-title ${t.status==='completed'?'crossed':''}">${t.title}</div>
+          ${t.desc?`<div class="tc-desc">${t.desc}</div>`:''}
+          <div class="tc-meta">
+            <span class="pri-tag ${t.pri}">${t.pri.charAt(0).toUpperCase()+t.pri.slice(1)}</span>
+            <span class="proj-tag">${t.proj}</span>
+            <span class="due-tag ${overdue&&t.status!=='completed'?'overdue':t.due===d(1)?'soon':''}">${dueLabel(t)}</span>
+            ${t.est?`<span class="est-tag">⏱ ${t.est}h</span>`:''}
+          </div>
+          ${blocked?`<div class="dep-warn">⚠️ First finish: <strong>${dep.title}</strong></div>`:''}
+        </div>
+      </div>
+      <div class="tc-actions">
+        ${t.status!=='completed'?`<button class="tc-btn focus-btn ${focusTaskId===t.id?'active':''}" onclick="event.stopPropagation();toggleFocus(${t.id})">${focusTaskId===t.id?'⏸ Focusing':'🎯 Focus'}</button>`:''}
+        <button class="tc-btn" onclick="event.stopPropagation();editTask(${t.id})">✏ Edit</button>
+        <button class="tc-btn" onclick="event.stopPropagation();deleteTask(${t.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateSummary();
+  updateAnalytics();
+  populateFilters();
+}
+
+function populateFilters() {
+  const projects = [...new Set(tasks.map(t=>t.proj))];
+  const pf = document.getElementById('proj-filter');
+  const cur = pf.value;
+  pf.innerHTML = '<option value="">All Projects</option>' + projects.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+
+  // datalist for modal
+  const dl = document.getElementById('proj-list');
+  if (dl) dl.innerHTML = projects.map(p=>`<option value="${p}">`).join('');
+
+  // dep select for modal
+  const ds = document.getElementById('m-dep');
+  if (ds) {
+    const cur2 = ds.value;
+    ds.innerHTML = '<option value="">None</option>' + tasks.filter(t=>t.status!=='completed').map(t=>`<option value="${t.id}" ${t.id==cur2?'selected':''}>${t.title}</option>`).join('');
+  }
+}
+
+/* ═══════════════════ SUMMARY ═══════════════════ */
+function updateSummary() {
+  const total = tasks.length;
+  const done  = tasks.filter(t=>t.status==='completed').length;
+  const overdue = tasks.filter(t=>isOverdue(t)).length;
+  const pending = tasks.filter(t=>t.status==='pending').length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const remHours = tasks.filter(t=>t.status==='pending').reduce((s,t)=>s+(t.est||0),0);
+  const doneToday = tasks.filter(t=>t.completed_at===d(0)).length;
+
+  document.getElementById('s-total').textContent   = total;
+  document.getElementById('s-done').textContent    = done;
+  document.getElementById('s-done-sub').textContent= `${doneToday} done today`;
+  document.getElementById('s-overdue').textContent = overdue;
+  document.getElementById('s-pending').textContent = pending;
+  document.getElementById('s-pct').textContent     = pct+'%';
+  document.getElementById('s-hours').textContent   = remHours+'h';
+
+  // ring chart
+  const rc = document.getElementById('ring-chart');
+  if (rc._chart) rc._chart.destroy();
+  rc._chart = new Chart(rc, {
+    type:'doughnut',
+    data:{datasets:[{data:[done,pending,overdue],backgroundColor:['#34d399','#4f8ef7','#f87171'],borderWidth:0,cutout:'78%'}]},
+    options:{responsive:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}
+  });
+
+  // weekly win
+  const projDone = {};
+  tasks.filter(t=>t.status==='completed').forEach(t=>{ projDone[t.proj]=(projDone[t.proj]||0)+1; });
+  const projTotal = {};
+  tasks.forEach(t=>{ projTotal[t.proj]=(projTotal[t.proj]||0)+1; });
+  const winProj = Object.keys(projDone).find(p=>projDone[p]===projTotal[p]);
+  document.getElementById('win-text').textContent = winProj
+    ? `You finished all tasks for "${winProj}" this week! 🎉`
+    : `You've completed ${done} task${done!==1?'s':''} so far. Keep going — you're making great progress!`;
+}
+
+/* ═══════════════════ ANALYTICS ═══════════════════ */
+let barChartInst = null, doughnutInst = null;
+function updateAnalytics() {
+  // Bar chart — daily completions this week
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const counts = days.map((_,i) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - today.getDay() + 1 + i);
+    const ds2 = date.toISOString().split('T')[0];
+    return tasks.filter(t=>t.completed_at===ds2).length;
+  });
+  const bc = document.getElementById('bar-chart');
+  if (barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(bc, {
+    type:'bar',
+    data:{labels:days,datasets:[{data:counts,backgroundColor:'rgba(79,142,247,.6)',borderRadius:5,borderSkipped:false,hoverBackgroundColor:'#4f8ef7'}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#6b7280',stepSize:1},grid:{color:'rgba(255,255,255,.04)'}},x:{ticks:{color:'#6b7280'},grid:{display:false}}}}
+  });
+
+  // Doughnut — priority breakdown
+  const pCounts = ['critical','high','medium','low'].map(p=>tasks.filter(t=>t.pri===p&&t.status!=='completed').length);
+  const dc = document.getElementById('doughnut-chart');
+  if (doughnutInst) doughnutInst.destroy();
+  doughnutInst = new Chart(dc,{
+    type:'doughnut',
+    data:{labels:['Critical','High','Medium','Low'],datasets:[{data:pCounts,backgroundColor:['#f87171','#fb923c','#4f8ef7','#6b7280'],borderWidth:0,cutout:'65%'}]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#6b7280',font:{size:11}}}}}
+  });
+
+  // Project progress bars
+  const projs = [...new Set(tasks.map(t=>t.proj))];
+  document.getElementById('proj-progress').innerHTML = projs.map(p=>{
+    const total = tasks.filter(t=>t.proj===p).length;
+    const done  = tasks.filter(t=>t.proj===p&&t.status==='completed').length;
+    const pct   = total ? Math.round(done/total*100) : 0;
+    const colors = {'WorkSphere v2':'#4f8ef7','DevOps':'#34d399','Hiring':'#a78bfa','Team Ops':'#fb923c'};
+    const col = colors[p]||'#4f8ef7';
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:.77rem;color:var(--text)">${p}</span>
+        <span style="font-size:.7rem;color:var(--muted)">${done}/${total}</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:100px;height:6px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${col};border-radius:100px;transition:width .6s ease"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════ ACTIONS ═══════════════════ */
+function toggleTask(id) {
+  const t = tasks.find(x=>x.id===id);
+  if (!t) return;
+  if (t.status === 'completed') {
+    t.status = 'pending'; t.completed_at = null;
+  } else {
+    t.status = 'completed'; t.completed_at = d(0);
+    if (focusTaskId === id) stopFocus();
+    const doneToday = tasks.filter(x=>x.completed_at===d(0)).length;
+    toast(`Nice! ${doneToday} task${doneToday!==1?'s':''} done today 🎉`, 'success');
+  }
+  renderTasks();
+}
+
+function toggleFocus(id) {
+  if (focusTaskId === id) { stopFocus(); return; }
+  if (focusTaskId) stopFocus(false);
+  focusTaskId = id;
+  focusSeconds = 0;
+  const t = tasks.find(x=>x.id===id);
+  document.getElementById('ft-task-name').textContent = t.title;
+  document.getElementById('focus-timer').classList.add('active');
+  focusInterval = setInterval(()=>{
+    focusSeconds++;
+    const m = String(Math.floor(focusSeconds/60)).padStart(2,'0');
+    const s = String(focusSeconds%60).padStart(2,'0');
+    document.getElementById('ft-clock').textContent = `${m}:${s}`;
+  },1000);
+  renderTasks();
+  toast(`Focus session started — stay in the zone! 🎯`, 'ai');
+}
+
+function stopFocus(rerender=true) {
+  clearInterval(focusInterval); focusInterval=null;
+  focusTaskId=null; focusSeconds=0;
+  document.getElementById('focus-timer').classList.remove('active');
+  document.getElementById('ft-clock').textContent='00:00';
+  if (rerender) renderTasks();
+}
+
+function focusDone() {
+  if (focusTaskId) { toggleTask(focusTaskId); stopFocus(false); renderTasks(); }
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t=>t.id!==id);
+  if (focusTaskId===id) stopFocus(false);
+  renderTasks();
+}
+
+function cardClick(e, id) { /* expand later */ }
+
+let editingId = null;
+function editTask(id) {
+  const t = tasks.find(x=>x.id===id);
+  editingId = id;
+  document.getElementById('m-title').value = t.title;
+  document.getElementById('m-desc').value  = t.desc||'';
+  document.getElementById('m-proj').value  = t.proj;
+  document.getElementById('m-owner').value = t.owner;
+  document.getElementById('m-pri').value   = t.pri;
+  document.getElementById('m-due').value   = t.due;
+  document.getElementById('m-est').value   = t.est||'';
+  populateFilters();
+  document.getElementById('m-dep').value   = t.dep||'';
+  openModal();
+}
+
+/* ═══════════════════ MODAL ═══════════════════ */
+function openModal() {
+  populateFilters();
+  document.getElementById('m-due').min = d(0);
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('open'); editingId=null; clearForm(); }
+function closeOutside(e) { if(e.target===document.getElementById('overlay')) closeModal(); }
+function clearForm() {
+  ['m-title','m-desc','m-proj','m-owner','m-due','m-est'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=id==='m-owner'?'John Doe':''; });
+  document.getElementById('m-pri').value='medium';
+  document.getElementById('m-dep').value='';
+}
+
+function addTask() {
+  const title = document.getElementById('m-title').value.trim();
+  if (!title) { toast('Please enter a task title'); return; }
+  const taskData = {
+    title,
+    desc:   document.getElementById('m-desc').value.trim(),
+    proj:   document.getElementById('m-proj').value.trim()||'General',
+    owner:  document.getElementById('m-owner').value.trim()||'John Doe',
+    pri:    document.getElementById('m-pri').value,
+    due:    document.getElementById('m-due').value||d(7),
+    est:    parseFloat(document.getElementById('m-est').value)||0,
+    dep:    parseInt(document.getElementById('m-dep').value)||null,
+    status:'pending', created:d(0), completed_at:null,
+  };
+  if (editingId) {
+    const idx = tasks.findIndex(t=>t.id===editingId);
+    tasks[idx] = {...tasks[idx],...taskData};
+  } else {
+    tasks.push({id:nextId++,...taskData});
+  }
+  closeModal();
+  renderTasks();
+  toast(editingId?'Task updated ✓':'Task added ✓','success');
+}
+
+function importFromMeeting() {
+  const imports = [
+    {title:'Follow up on API integration decision',desc:'Action item from Engineering sync',proj:'WorkSphere v2',pri:'high',due:d(2),est:1},
+    {title:'Share retrospective notes with team',desc:'From monthly retro meeting',proj:'Team Ops',pri:'medium',due:d(1),est:0.5},
+    {title:'Schedule 1:1 with new hire',desc:'From onboarding kickoff',proj:'Hiring',pri:'medium',due:d(3),est:0.5},
+  ];
+  imports.forEach(t=>{ tasks.push({id:nextId++,...t,owner:'John Doe',status:'pending',created:d(0),completed_at:null,dep:null}); });
+  closeModal();
+  renderTasks();
+  toast('3 tasks imported from Meeting Intelligence 🎥','ai');
+}
+
+/* ═══════════════════ TAB / SORT ═══════════════════ */
+function setTab(tab, btn) {
+  currentTab = tab;
+  aiPriorityOrder = null;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('schedule-hint').classList.remove('show');
+  renderTasks();
+}
+
+const sortModes = ['due','priority','est'];
+const sortLabels = ['Due date','Priority','Est. time'];
+let sortIdx = 0;
+function toggleSort() {
+  sortIdx = (sortIdx+1)%sortModes.length;
+  sortMode = sortModes[sortIdx];
+  document.getElementById('sort-label').textContent = sortLabels[sortIdx];
+  renderTasks();
+}
+
+/* ═══════════════════ AI PRIORITIZE ═══════════════════ */
+async function aiPrioritize() {
+  const btn = document.getElementById('prioritize-btn');
+  btn.innerHTML = '<span class="ai-ico spinning">↻</span> Planning…';
+  btn.disabled = true;
+
+  const pending = tasks.filter(t=>t.status==='pending');
+  if (!pending.length) {
+    document.getElementById('ai-insight-text').innerHTML = 'All tasks are complete — great work today!';
+    toast('Nothing to prioritize — you are all caught up 🎉','ai');
+    btn.innerHTML = '<span class="ai-ico">⚡</span> Prioritize my day';
+    btn.disabled = false;
+    return;
+  }
+
+  const weight = pri => pri==='critical'?4:pri==='high'?3:pri==='medium'?2:1;
+  const dateValue = due => new Date(due).getTime();
+
+  aiPriorityOrder = pending
+    .slice()
+    .sort((a,b) => {
+      const overdueA = isOverdue(a)?1:0;
+      const overdueB = isOverdue(b)?1:0;
+      if (overdueA !== overdueB) return overdueB - overdueA;
+      const p = weight(b.pri) - weight(a.pri);
+      if (p !== 0) return p;
+      const dA = dateValue(a.due);
+      const dB = dateValue(b.due);
+      if (dA !== dB) return dA - dB;
+      return (a.est || 0) - (b.est || 0);
+    })
+    .map(t => t.id);
+
+  const topTasks = pending.slice().sort((a,b) => aiPriorityOrder.indexOf(a.id)-aiPriorityOrder.indexOf(b.id)).slice(0,3);
+  const scheduleSteps = [];
+  if (topTasks[0]) scheduleSteps.push(`Start with “${topTasks[0].title}”`);
+  if (topTasks[1]) scheduleSteps.push(`then tackle “${topTasks[1].title}”`);
+  if (topTasks[2]) scheduleSteps.push(`finish the day with “${topTasks[2].title}”`);
+  const schedule = scheduleSteps.join(', ') + '.';
+
+  const urgent = pending.filter(t=>isOverdue(t) || t.pri==='critical');
+  const insightParts = [];
+  if (urgent.length) {
+    insightParts.push(`Focus first on ${urgent.length} ${urgent.length===1?'urgent task':'urgent tasks'}${urgent.length>1?'':' that is'} overdue or critical.`);
+  } else {
+    insightParts.push('Your workload is balanced; follow the prioritized order and keep momentum.');
+  }
+  const insight = `${insightParts.join(' ')} ${topTasks.length ? `Top task: ${topTasks[0].title}.` : ''}`;
+
+  document.getElementById('schedule-hint').innerHTML = `<strong>✨ Smart Schedule:</strong> ${schedule}`;
+  document.getElementById('schedule-hint').classList.add('show');
+  document.getElementById('ai-insight-text').innerHTML = insight;
+
+  currentTab='today';
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  renderTasks();
+  toast('Tasks prioritized for your day ⚡','ai');
+
+  btn.innerHTML = '<span class="ai-ico">⚡</span> Prioritize my day';
+  btn.disabled = false;
+}
+
+/* ═══════════════════ AI CLEANUP ═══════════════════ */
+async function aiCleanup() {
+  const btn = document.getElementById('cleanup-btn');
+  btn.innerHTML = '<span class="ai-ico spinning">↻</span> Analysing…';
+  btn.disabled = true;
+
+  const taskList = tasks.map(t=>`- id:${t.id} | "${t.title}" | ${t.status} | ${t.pri} | due:${t.due} | created:${t.created}`).join('\n');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:600,
+        messages:[{role:'user',content:`You are a productivity assistant. Analyze these tasks and suggest cleanup actions. Return ONLY valid JSON with no markdown: {"actions":[{"id":number,"action":"complete or deprioritize","reason":"short reason"}],"summary":"1 sentence summary"}\n\nRules: suggest marking stale old pending tasks as complete if they seem done, or deprioritize low-priority old tasks. Max 3 actions. Use exact numeric task ids.\n\nTasks:\n${taskList}`}]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.map(b=>b.text||'').join('');
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    parsed.actions.forEach(a=>{
+      const t = tasks.find(x=>x.id===a.id);
+      if (!t) return;
+      if (a.action==='complete') { t.status='completed'; t.completed_at=d(0); }
+      if (a.action==='deprioritize') { t.pri = t.pri==='critical'?'high': t.pri==='high'?'medium':'low'; }
+    });
+
+    document.getElementById('ai-insight-text').innerHTML = `<strong>Cleanup complete:</strong> ${parsed.summary}`;
+    renderTasks();
+    toast(`✦ ${parsed.summary}`,'ai');
+
+  } catch(e) {
+    console.error('Cleanup error:', e);
+    toast('AI error: ' + (e.message||'check console'), '');
+  }
+
+  btn.innerHTML = '<span class="ai-ico">✦</span> Clean up tasks';
+  btn.disabled = false;
+}
+
+/* ═══════════════════ TOAST ═══════════════════ */
+function toast(msg, type='') {
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(()=>{ el.classList.add('show'); });
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),400); }, 3200);
+}
+
+/* ═══════════════════ INIT ═══════════════════ */
+renderTasks();
+
+// Set a smart default insight based on task data
+(function setDefaultInsight() {
+  const overdue = tasks.filter(t=>isOverdue(t));
+  const critical = tasks.filter(t=>t.pri==='critical'&&t.status==='pending');
+  const doneToday = tasks.filter(t=>t.completed_at===d(0)).length;
+  let msg = '';
+  if (critical.length) msg = `You have <strong>${critical.length} critical task${critical.length>1?'s':''}</strong> pending. Tackle those first before anything else.`;
+  else if (overdue.length) msg = `<strong>${overdue.length} task${overdue.length>1?'s are':' is'} overdue</strong>. Click <strong>Prioritize my day</strong> to get a smart plan for catching up.`;
+  else if (doneToday > 0) msg = `Great start — you've already completed <strong>${doneToday} task${doneToday>1?'s':''}</strong> today. Keep that momentum going!`;
+  else msg = `Click <strong>Prioritize my day</strong> to get a smart schedule and workload advice from AI.`;
+  document.getElementById('ai-insight-text').innerHTML = msg;
+})();
+</script>
+</body>
+</html>

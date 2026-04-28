@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiring Intelligence — WorkSphere</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d14;--surface:#111520;--surface2:#161b2e;
+  --border:rgba(255,255,255,0.07);
+  --blue:#4f8ef7;--purple:#a78bfa;--green:#34d399;
+  --orange:#fb923c;--red:#f87171;--pink:#f472b6;--teal:#2dd4bf;
+  --text:#e8eaf0;--muted:#6b7280;--dim:#374151;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 65% 50% at 5% 0%,rgba(244,114,182,.07) 0%,transparent 55%),radial-gradient(ellipse 55% 45% at 95% 100%,rgba(79,142,247,.07) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+.topbar{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:0 22px;height:56px;background:rgba(11,13,20,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);flex-shrink:0}
+.tb-left{display:flex;align-items:center;gap:14px;margin-left:108px}
+.back-btn{position:absolute;left:18px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:.82rem;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.04);transition:all .2s;white-space:nowrap;z-index:21}
+.back-btn:hover{color:var(--text);background:rgba(255,255,255,.08)}
+.vdiv{width:1px;height:18px;background:var(--border)}
+.mod-badge{display:flex;align-items:center;gap:8px}
+.mod-ico{width:28px;height:28px;border-radius:7px;background:rgba(244,114,182,.12);border:1px solid rgba(244,114,182,.2);display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.mod-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:#fff}
+.mod-sub{font-size:.68rem;color:var(--muted)}
+.tb-right{display:flex;align-items:center;gap:9px}
+.add-btn{display:flex;align-items:center;gap:5px;padding:6px 13px;border-radius:7px;font-size:.77rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .2s}
+.add-btn.pink{background:var(--pink);color:#fff;box-shadow:0 0 16px rgba(244,114,182,.3)}
+.add-btn.pink:hover{background:#f9a8d4;box-shadow:0 0 24px rgba(244,114,182,.5)}
+.add-btn.ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.add-btn.ghost:hover{background:var(--surface);color:var(--text)}
+
+.layout{flex:1;display:flex;overflow:hidden;position:relative;z-index:1}
+.left-col{width:34%;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:rgba(17,21,32,.5);overflow:hidden}
+.col-hdr{padding:13px 16px 11px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.col-title{font-family:'Syne',sans-serif;font-weight:800;font-size:.9rem;color:#fff;letter-spacing:-.01em}
+.col-sub{font-size:.68rem;color:var(--muted);margin-top:1px}
+.open-count{font-size:.72rem;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.2);color:var(--pink);padding:3px 9px;border-radius:100px}
+.role-search{padding:9px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.role-search input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 11px;font-size:.8rem;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s}
+.role-search input:focus{border-color:rgba(244,114,182,.3)}
+.role-search input::placeholder{color:var(--dim)}
+.role-list{flex:1;overflow-y:auto;padding:6px 0}
+.role-list::-webkit-scrollbar{width:3px}
+.role-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px}
+.role-item{padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;position:relative}
+.role-item:hover{background:rgba(255,255,255,.03)}
+.role-item.active{background:rgba(244,114,182,.07);border-left:3px solid var(--pink)}
+.role-item.ageing{border-left:3px solid var(--orange)}
+.ri-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px}
+.ri-title{font-size:.84rem;font-weight:500;color:var(--text)}
+.ri-dept{font-size:.66rem;background:rgba(167,139,250,.1);color:#a78bfa;padding:2px 7px;border-radius:4px}
+.ri-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.ri-days{font-size:.66rem;color:var(--muted);display:flex;align-items:center;gap:3px}
+.ri-days.ageing{color:var(--orange)}
+.ri-status{font-size:.66rem;padding:2px 6px;border-radius:4px}
+.ri-status.open{background:rgba(52,211,153,.1);color:var(--green)}
+.ri-status.closed{background:rgba(107,114,128,.1);color:var(--muted)}
+.ri-status.paused{background:rgba(251,146,60,.1);color:var(--orange)}
+.ri-candidates{font-size:.66rem;color:var(--dim)}
+.warn-tag{font-size:.62rem;color:var(--orange);background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.15);padding:2px 7px;border-radius:4px;margin-top:5px;display:inline-flex;align-items:center;gap:4px}
+
+.right-col{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.right-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 18px;background:rgba(11,13,20,.4)}
+.rtab{padding:12px 16px;font-size:.78rem;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;transition:all .18s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.rtab.active{color:var(--pink);border-bottom-color:var(--pink)}
+.rtab:hover:not(.active){color:var(--text)}
+.tab-panel{display:none;flex:1;overflow:hidden;flex-direction:column}
+.tab-panel.active{display:flex}
+
+/* PIPELINE */
+.pipeline-hdr{padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pipe-role-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.92rem;color:#fff}
+.pipe-role-sub{font-size:.72rem;color:var(--muted)}
+.spacer{flex:1}
+.ai-screen-btn{display:flex;align-items:center;gap:5px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:#a78bfa;padding:6px 12px;border-radius:7px;font-size:.73rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s}
+.ai-screen-btn:hover{background:rgba(167,139,250,.2)}
+.kanban{flex:1;overflow-x:auto;overflow-y:hidden;display:flex;gap:10px;padding:14px 16px}
+.kanban::-webkit-scrollbar{height:4px}
+.kanban::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px}
+.kstage{min-width:190px;max-width:190px;display:flex;flex-direction:column;gap:0}
+.kstage-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:0 2px}
+.kstage-name{font-size:.72rem;font-weight:600;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.kstage-count{font-size:.65rem;background:var(--surface);border:1px solid var(--border);color:var(--muted);width:20px;height:20px;border-radius:100px;display:flex;align-items:center;justify-content:center}
+.kstage-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px}
+.kstage-body::-webkit-scrollbar{width:0}
+.cand-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 12px;cursor:pointer;transition:all .2s;position:relative}
+.cand-card:hover{border-color:rgba(255,255,255,.12);transform:translateY(-1px)}
+.cand-card.top-fit{border-color:rgba(52,211,153,.25)}
+.cand-card.ageing-cand{border-left:3px solid var(--orange)}
+.cc-name{font-size:.82rem;font-weight:500;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.fit-badge{font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:4px}
+.fit-badge.high{background:rgba(52,211,153,.15);color:var(--green)}
+.fit-badge.mid{background:rgba(79,142,247,.12);color:var(--blue)}
+.fit-badge.low{background:rgba(248,113,113,.12);color:var(--red)}
+.cc-role{font-size:.7rem;color:var(--muted);margin-bottom:5px}
+.cc-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.src-tag{font-size:.62rem;padding:1px 6px;border-radius:4px;background:rgba(45,212,191,.08);color:var(--teal)}
+.cc-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.cc-btn{padding:3px 8px;border-radius:4px;font-size:.63rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s}
+.cc-btn:hover{background:var(--surface2);color:var(--text)}
+.cc-btn.move{border-color:rgba(244,114,182,.3);color:var(--pink)}
+
+/* ANALYTICS */
+.analytics-wrap{flex:1;overflow-y:auto;padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.analytics-wrap::-webkit-scrollbar{width:3px}
+.a-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.a-card.full{grid-column:span 2}
+.a-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;color:#fff;margin-bottom:12px;letter-spacing:-.01em}
+.a-card canvas{max-height:160px}
+.bn-list{display:flex;flex-direction:column;gap:8px}
+.bn-item{display:flex;align-items:center;gap:10px;font-size:.78rem}
+.bn-stages{color:var(--muted);flex:1}
+.bn-pct{font-weight:600;padding:2px 8px;border-radius:4px;font-size:.72rem}
+.bn-pct.bad{background:rgba(248,113,113,.12);color:var(--red)}
+.bn-pct.ok{background:rgba(52,211,153,.1);color:var(--green)}
+.bn-pct.mid{background:rgba(251,146,60,.1);color:var(--orange)}
+.src-list{display:flex;flex-direction:column;gap:7px}
+.src-row{display:flex;align-items:center;gap:8px}
+.src-name{font-size:.76rem;color:var(--text);width:90px;flex-shrink:0}
+.src-bar-wrap{flex:1;background:var(--surface2);border-radius:100px;height:5px;overflow:hidden}
+.src-bar{height:100%;border-radius:100px;background:var(--teal);transition:width .6s ease}
+.src-num{font-size:.68rem;color:var(--muted);width:24px;text-align:right}
+.tth-list{display:flex;flex-direction:column;gap:6px}
+.tth-row{display:flex;align-items:center;justify-content:space-between}
+.tth-role{font-size:.76rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.tth-val{font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem}
+.tth-val.fast{color:var(--green)}
+.tth-val.slow{color:var(--orange)}
+.tth-val.bad{color:var(--red)}
+
+/* MY INTERVIEWS - Simplified */
+.my-interviews-wrap{flex:1;overflow-y:auto;padding:16px 18px}
+.my-intv-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px}
+.my-intv-card.upcoming{border-left:3px solid var(--green)}
+.my-intv-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.my-intv-icon{width:36px;height:36px;border-radius:50%;background:rgba(244,114,182,.15);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.my-intv-candidate{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:#fff}
+.my-intv-date{font-size:.78rem;color:var(--green);display:flex;align-items:center;gap:6px;margin-left:auto}
+.my-intv-time{font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.empty-interviews{text-align:center;padding:60px 20px;color:var(--dim)}
+.empty-interviews .icon{font-size:3rem;margin-bottom:12px;opacity:.4}
+
+/* RESUME ANALYSER */
+.resume-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.ra-layout{flex:1;display:flex;overflow:hidden}
+.ra-left{width:300px;flex-shrink:0;border-right:1px solid var(--border);background:rgba(11,13,20,.6);display:flex;flex-direction:column;overflow-y:auto}
+.ra-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.ra-section-title{font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;color:var(--pink);letter-spacing:-.01em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ra-upload-zone{border:1.5px dashed rgba(244,114,182,.25);border-radius:11px;padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(244,114,182,.03);position:relative}
+.ra-upload-zone:hover{border-color:rgba(244,114,182,.6);background:rgba(244,114,182,.07)}
+.ra-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.ra-upload-icon{font-size:1.6rem;margin-bottom:6px;opacity:.7}
+.ra-upload-label{font-size:.75rem;font-weight:600;color:var(--pink)}
+.ra-upload-sub{font-size:.63rem;color:var(--muted);margin-top:3px}
+.ra-file-list{margin-top:10px;display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto}
+.ra-file-item{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;display:flex;align-items:center;justify-content:space-between;font-size:.72rem}
+.ra-file-item-name{display:flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:180px}
+.ra-file-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem}
+.ra-file-rm:hover{color:var(--red)}
+.ra-crit-list{display:flex;flex-direction:column;gap:7px}
+.ra-crit-item{display:flex;align-items:center;gap:8px;padding:7px 8px;background:rgba(17,21,32,.6);border-radius:8px;border:1px solid transparent;cursor:pointer}
+.ra-crit-item:hover{border-color:rgba(244,114,182,.2)}
+.ra-crit-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--pink);cursor:pointer}
+.ra-crit-item label{font-size:.77rem;color:var(--muted);cursor:pointer;flex:1}
+.ra-crit-item:has(input:checked){border-color:rgba(244,114,182,.2);background:rgba(244,114,182,.05)}
+.ra-crit-item:has(input:checked) label{color:var(--text)}
+.ra-custom-row{display:flex;gap:6px;margin-top:10px}
+.ra-custom-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-size:.75rem;color:var(--text);outline:none}
+.ra-add-btn{padding:6px 10px;border-radius:7px;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);color:var(--pink);font-size:.71rem;cursor:pointer}
+.ra-analyse-btn{width:100%;margin-top:14px;padding:10px;border-radius:9px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;border:none}
+.ra-analyse-btn:disabled{opacity:.45}
+.ra-right{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ra-results-hdr{padding:12px 18px;border-bottom:1px solid var(--border);background:rgba(11,13,20,.5);flex-shrink:0}
+.ra-results-hdr h3{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;color:var(--pink)}
+.ra-results-hdr p{font-size:.68rem;color:var(--muted);margin-top:2px}
+.ra-stats-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ra-stat{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.15);border-radius:20px;padding:3px 11px;font-size:.68rem;color:#c4b5fd}
+.ra-cands{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.ra-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--muted);text-align:center;padding:40px}
+.ra-cand-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:14px 16px;cursor:pointer;transition:all .22s}
+.ra-cand-card:hover{border-color:rgba(244,114,182,.25);transform:translateX(3px)}
+.ra-cand-card.tier-strong{border-color:rgba(52,211,153,.2)}
+.ra-cc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.ra-cc-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:#fff}
+.ra-cc-pct{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;line-height:1}
+.ra-cc-pct.strong{color:var(--green)}
+.ra-cc-pct.moderate{color:var(--blue)}
+.ra-cc-pct.weak{color:var(--red)}
+.ra-match-list{background:rgba(17,21,32,.5);border-radius:9px;padding:10px 12px;margin:10px 0}
+.ra-match-item{display:flex;align-items:center;gap:8px;font-size:.72rem}
+.ra-match-bar{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.ra-match-fill{height:100%;border-radius:3px}
+.ra-match-fill.hi{background:var(--green)}
+.ra-match-fill.lo{background:rgba(248,113,113,.6)}
+.ra-skill-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ra-skill-tag{background:rgba(244,114,182,.07);border:1px solid rgba(244,114,182,.15);border-radius:100px;padding:2px 9px;font-size:.62rem;color:var(--pink)}
+.ra-insight{background:rgba(167,139,250,.05);border-left:2px solid var(--purple);border-radius:7px;padding:9px 11px;font-size:.73rem;color:#c4b5fd;margin-top:9px}
+.ra-cc-actions{display:flex;gap:6px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border)}
+.ra-cc-btn{padding:4px 10px;border-radius:5px;font-size:.68rem;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted)}
+.ra-cc-btn.shortlist{border-color:rgba(52,211,153,.3);color:var(--green)}
+
+/* MODALS */
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:#111520;border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:26px 24px;width:100%;max-width:500px;max-height:88vh;overflow-y:auto}
+.modal.wide{max-width:580px}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:.98rem;color:#fff;margin-bottom:14px}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.mfield{margin-bottom:12px}
+.mfield label{display:block;font-size:.74rem;font-weight:500;color:#c9ccd4;margin-bottom:5px}
+.mfield input,.mfield select,.mfield textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:.82rem;color:var(--text);outline:none}
+.modal-actions{display:flex;gap:8px;margin-top:14px}
+.m-btn{flex:1;padding:9px;border-radius:8px;font-size:.875rem;font-weight:600;cursor:pointer;border:none}
+.m-btn.pri{background:var(--pink);color:#fff}
+.m-btn.gho{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.email-tpl{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:14px;font-size:.78rem;color:#d1d5db;white-space:pre-wrap;margin-bottom:12px;max-height:220px;overflow-y:auto}
+.copy-btn{display:flex;align-items:center;gap:5px;background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.25);color:var(--blue);padding:6px 12px;border-radius:7px;font-size:.73rem;cursor:pointer}
+.ai-result-box{background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:10px;padding:14px;font-size:.78rem;color:#c4b5fd;line-height:1.75;margin-bottom:12px;display:none}
+.ai-result-box.show{display:block}
+.toast-wrap{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;align-items:center;gap:7px;pointer-events:none}
+.toast{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 18px;border-radius:10px;font-size:.8rem;font-weight:500;opacity:0;transform:translateY(14px);transition:all .3s;white-space:nowrap}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{border-color:rgba(52,211,153,.3);color:var(--green)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="module.html" class="back-btn">← Go Back</a>
+  <div class="tb-left">
+    <div class="mod-badge">
+      <div class="mod-ico">🧑‍💼</div>
+      <div>
+        <div class="mod-name">Hiring Intelligence</div>
+        <div class="mod-sub">Smart Hiring Dashboard</div>
+      </div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <button class="add-btn ghost" onclick="openAddCandidate()">+ Candidate</button>
+    <button class="add-btn pink" onclick="openAddRole()">+ Role</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="left-col">
+    <div class="col-hdr">
+      <div>
+        <div class="col-title">Open Roles</div>
+        <div class="col-sub" id="roles-sub">Loading…</div>
+      </div>
+      <span class="open-count" id="open-count">0 open</span>
+    </div>
+    <div class="role-search"><input type="text" id="role-search" placeholder="Search roles…" oninput="renderRoles()"></div>
+    <div class="role-list" id="role-list"></div>
+  </div>
+
+  <div class="right-col">
+    <div class="right-tabs">
+      <button class="rtab active" onclick="setRTab('pipeline',this)">Pipeline</button>
+      <button class="rtab" onclick="setRTab('analytics',this)">Analytics</button>
+      <button class="rtab" onclick="setRTab('myinterviews',this)">📅 My Interviews</button>
+      <button class="rtab" onclick="setRTab('resume',this)">✦ Resume Analyser</button>
+    </div>
+
+    <!-- PIPELINE -->
+    <div class="tab-panel active" id="tab-pipeline">
+      <div class="pipeline-hdr">
+        <div>
+          <div class="pipe-role-name" id="pipe-role-name">Select a role</div>
+          <div class="pipe-role-sub" id="pipe-role-sub">Choose a role from the left panel</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="ai-screen-btn" onclick="aiScreenAll()"><span class="sico">✦</span> AI Screen All</button>
+        <button class="add-btn ghost" style="font-size:.72rem;padding:5px 11px" onclick="openAddCandidate()">+ Add Candidate</button>
+      </div>
+      <div class="kanban" id="kanban"></div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="tab-panel" id="tab-analytics">
+      <div class="analytics-wrap">
+        <div class="a-card full"><div class="a-title">Pipeline Funnel — Drop-off by Stage</div><canvas id="funnel-chart"></canvas></div>
+        <div class="a-card"><div class="a-title">⚠️ Bottleneck Alerts</div><div class="bn-list" id="bn-list"></div></div>
+        <div class="a-card"><div class="a-title">Candidate Sources</div><div class="src-list" id="src-list"></div></div>
+        <div class="a-card"><div class="a-title">Time-to-Hire by Role</div><div class="tth-list" id="tth-list"></div></div>
+        <div class="a-card"><div class="a-title">Stage Distribution</div><canvas id="stage-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- MY INTERVIEWS - Only logged-in employee's interviews -->
+    <div class="tab-panel" id="tab-myinterviews">
+      <div class="my-interviews-wrap" id="my-interviews-wrap"></div>
+    </div>
+
+    <!-- RESUME ANALYSER -->
+    <div class="tab-panel" id="tab-resume">
+      <div class="resume-wrap">
+        <div class="ra-layout">
+          <div class="ra-left">
+            <div class="ra-section">
+              <div class="ra-section-title">📁 Upload Resumes</div>
+              <div class="ra-upload-zone" id="ra-upload-zone">
+                <input type="file" id="ra-file-input" multiple accept=".pdf,.doc,.docx,.txt" onchange="ra_handleFiles(this)">
+                <div class="ra-upload-icon">📄</div>
+                <div class="ra-upload-label">Click or drag &amp; drop</div>
+                <div class="ra-upload-sub">PDF, DOC, DOCX, TXT</div>
+              </div>
+              <div class="ra-file-list" id="ra-file-list"></div>
+            </div>
+            <div class="ra-section">
+              <div class="ra-section-title">🎯 What are you looking for?</div>
+              <div class="ra-crit-list" id="ra-crit-list"></div>
+              <div class="ra-custom-row">
+                <input type="text" id="ra-custom-input" placeholder="+ Add skill..." onkeypress="if(event.key==='Enter')ra_addCustomSkill()">
+                <button class="ra-add-btn" onclick="ra_addCustomSkill()">Add</button>
+              </div>
+              <button class="ra-analyse-btn" id="ra-analyse-btn" onclick="ra_analyze()">✦ Analyze Resumes</button>
+            </div>
+          </div>
+          <div class="ra-right">
+            <div class="ra-results-hdr"><h3>Candidate Rankings</h3><p>AI-powered match analysis</p><div class="ra-stats-row" id="ra-stats-row"></div></div>
+            <div class="ra-cands" id="ra-cands"><div class="ra-empty"><div class="ra-empty-ico">📄✨</div><div class="ra-empty-title">No resumes analysed yet</div><div class="ra-empty-sub">Upload resumes, pick criteria, and hit Analyze.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+<div class="overlay" id="role-overlay" onclick="closeOv(event,'role-overlay')"><div class="modal"><div class="modal-title">Post New Role</div><input type="text" id="r-title" placeholder="e.g. Senior Backend Engineer"><div class="mrow"><div class="mfield"><label>Department</label><input type="text" id="r-dept" placeholder="Engineering"></div><div class="mfield"><label>Location</label><input type="text" id="r-loc" placeholder="Remote / Bengaluru"></div></div><div class="mrow"><div class="mfield"><label>Status</label><select id="r-status"><option value="open">Open</option><option value="paused">Paused</option><option value="closed">Closed</option></select></div><div class="mfield"><label>Hiring Manager</label><input type="text" id="r-manager" placeholder="e.g. Ravi K."></div></div><div class="mfield"><label>Job Description</label><textarea id="r-jd" placeholder="Key skills, responsibilities…"></textarea></div><div class="modal-actions"><button class="m-btn gho" onclick="closeModal('role-overlay')">Cancel</button><button class="m-btn pri" onclick="addRole()">Post Role</button></div></div></div>
+<div class="overlay" id="cand-overlay" onclick="closeOv(event,'cand-overlay')"><div class="modal"><div class="modal-title">Add Candidate</div><div class="mrow"><div class="mfield"><label>Full Name *</label><input type="text" id="c-name"></div><div class="mfield"><label>Email</label><input type="email" id="c-email"></div></div><div class="mrow"><div class="mfield"><label>Role Applied</label><select id="c-role"></select></div><div class="mfield"><label>Source</label><select id="c-src"><option>LinkedIn</option><option>Referral</option><option>Campus</option><option>Job Board</option></select></div></div><div class="mrow"><div class="mfield"><label>Stage</label><select id="c-stage"><option>Applied</option><option>Shortlisted</option><option>Interviewed</option><option>Offered</option><option>Hired</option><option>Rejected</option></select></div><div class="mfield"><label>Fit Score (1–10)</label><input type="number" id="c-fit" min="1" max="10"></div></div><div class="mfield"><label>Notes</label><textarea id="c-notes" rows="2"></textarea></div><div class="modal-actions"><button class="m-btn gho" onclick="closeModal('cand-overlay')">Cancel</button><button class="m-btn pri" onclick="addCandidate()">Add Candidate</button></div></div></div>
+<div class="overlay" id="email-overlay" onclick="closeOv(event,'email-overlay')"><div class="modal wide"><div class="modal-title" id="email-modal-title">Status Update Email</div><div class="email-tpl" id="email-tpl-body"></div><div style="display:flex;gap:8px"><button class="copy-btn" onclick="copyEmail()">📋 Copy Email</button><button class="m-btn gho" style="flex:none" onclick="closeModal('email-overlay')">Close</button></div></div></div>
+<div class="overlay" id="ai-overlay" onclick="closeOv(event,'ai-overlay')"><div class="modal wide"><div class="modal-title">✦ AI Resume Screening</div><div class="ai-result-box show" id="ai-result-box"></div><div class="modal-actions"><button class="m-btn gho" onclick="closeModal('ai-overlay')">Close</button></div></div></div>
+
+<script>
+const today = new Date();
+const dStr = (offset=0) => { const dt=new Date(today); dt.setDate(dt.getDate()+offset); return dt.toISOString().split('T')[0]; };
+const daysSince = dateStr => Math.floor((today - new Date(dateStr))/86400000);
+
+let currentRole = null, currentRightTab = 'pipeline';
+
+let roles = [
+  {id:1,title:'Senior Backend Engineer',dept:'Engineering',loc:'Bengaluru',status:'open',manager:'Ravi K.',jd:'Node.js, PostgreSQL, AWS, system design',opened:dStr(-28)},
+  {id:2,title:'Product Designer',dept:'Design',loc:'Remote',status:'open',manager:'Meera S.',jd:'Figma, user research, design systems',opened:dStr(-14)},
+  {id:3,title:'Data Scientist',dept:'Data',loc:'Hybrid',status:'open',manager:'Ravi K.',jd:'Python, ML, TensorFlow, SQL',opened:dStr(-42)},
+  {id:4,title:'Frontend Engineer',dept:'Engineering',loc:'Remote',status:'open',manager:'Arjun M.',jd:'React, TypeScript, CSS',opened:dStr(-7)},
+];
+
+let candidates = [
+  {id:1,name:'Ananya Rao',email:'ananya@mail.com',roleId:1,src:'LinkedIn',stage:'Shortlisted',fit:8,notes:'Strong Node.js',appliedAt:dStr(-20),stageChangedAt:dStr(-5)},
+  {id:2,name:'Karan Mehta',email:'karan@mail.com',roleId:1,src:'Referral',stage:'Interviewed',fit:9,notes:'Excellent candidate',appliedAt:dStr(-18),stageChangedAt:dStr(-2)},
+  {id:3,name:'Divya Nair',email:'divya@mail.com',roleId:1,src:'Job Board',stage:'Applied',fit:5,notes:'Junior level',appliedAt:dStr(-15),stageChangedAt:dStr(-15)},
+  {id:4,name:'Snehal Patil',email:'snehal@mail.com',roleId:1,src:'LinkedIn',stage:'Offered',fit:8,notes:'Strong fit',appliedAt:dStr(-25),stageChangedAt:dStr(-1)},
+  {id:5,name:'Priya Sharma',email:'priya@mail.com',roleId:2,src:'Referral',stage:'Shortlisted',fit:9,notes:'Stunning portfolio',appliedAt:dStr(-10),stageChangedAt:dStr(-3)},
+];
+
+let nextRoleId=5, nextCandId=6;
+const STAGES = ['Applied','Shortlisted','Interviewed','Offered','Hired','Rejected'];
+const stageColors = {Applied:'#9ca3af',Shortlisted:'#4f8ef7',Interviewed:'#a78bfa',Offered:'#fb923c',Hired:'#34d399',Rejected:'#f87171'};
+
+// My Interviews - Only for logged-in employee (Ravi K.)
+const myInterviews = [
+  { id:1, candidate:'Karan Mehta', role:'Senior Backend Engineer', date:'Today', time:'2:00 PM', type:'Technical Round' },
+  { id:2, candidate:'Ananya Rao', role:'Senior Backend Engineer', date:'Tomorrow', time:'11:00 AM', type:'System Design' },
+  { id:3, candidate:'Vijay Kumar', role:'Data Scientist', date:'Wednesday', time:'3:30 PM', type:'Hiring Manager' },
+  { id:4, candidate:'Snehal Patil', role:'Senior Backend Engineer', date:'Thursday', time:'10:00 AM', type:'Final Round' },
+];
+
+function renderMyInterviews() {
+  const container = document.getElementById('my-interviews-wrap');
+  if(!myInterviews.length){
+    container.innerHTML = `<div class="empty-interviews"><div class="icon">📅</div><div>No upcoming interviews assigned to you</div><div style="font-size:.7rem;margin-top:6px;">Interviews will appear here when scheduled</div></div>`;
+    return;
+  }
+  container.innerHTML = myInterviews.map(i => `
+    <div class="my-intv-card upcoming">
+      <div class="my-intv-header">
+        <div class="my-intv-icon">👤</div>
+        <div class="my-intv-candidate">${i.candidate}</div>
+        <div class="my-intv-date">📅 ${i.date}</div>
+        <div class="my-intv-time">⏰ ${i.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Resume Analyser
+let ra_files = [];
+const RA_SKILL_KEYWORDS = {
+  'React / Frontend': ['react','react.js','next.js','vue','frontend','typescript','jsx'],
+  'Node.js / Backend': ['node','node.js','express','backend','rest api','graphql','microservices'],
+  'Python / Data Science': ['python','django','flask','pandas','numpy','tensorflow','ml','machine learning'],
+  'AWS / Cloud': ['aws','ec2','s3','lambda','kubernetes','terraform','devops'],
+  'Leadership / Management': ['lead','managed','team lead','head of','principal','architect','mentor'],
+  'System Design': ['system design','architecture','scalability','distributed','high availability','microservices'],
+};
+const RA_DEMO_RESUMES = [
+  { name:'Ananya Sharma', fileName:'Ananya_Sharma.pdf', email:'ananya.s@gmail.com', content:'Senior Frontend Engineer with 5 years React experience. Built scalable applications, Redux, TypeScript, led frontend team of 4.' },
+  { name:'Rahul Mehta', fileName:'Rahul_Mehta.pdf', email:'rahul.m@email.com', content:'Backend Developer, 4 years Node.js experience. Built microservices, REST APIs, MongoDB. AWS certified.' },
+  { name:'Priya Verma', fileName:'Priya_Verma.pdf', email:'priya.v@mail.com', content:'Data Scientist with Python, ML, TensorFlow. 3 years experience in predictive modeling.' },
+];
+
+function ra_handleFiles(input) {
+  const files = Array.from(input.files);
+  files.forEach(f => { if(!ra_files.find(x=>x.fileName===f.name)) ra_files.push({ name:f.name.replace(/\.[^.]+$/,'').replace(/[_\-]/g,' '), fileName:f.name, email:'', content:'' }); });
+  ra_renderFileList(); input.value='';
+}
+function ra_renderFileList() {
+  const el=document.getElementById('ra-file-list');
+  el.innerHTML=ra_files.length?ra_files.map((f,i)=>`<div class="ra-file-item"><div class="ra-file-item-name">📄 ${f.fileName}</div><button class="ra-file-rm" onclick="ra_removeFile(${i})">✕</button></div>`).join(''):'';
+}
+function ra_removeFile(i){ ra_files.splice(i,1); ra_renderFileList(); }
+function ra_toggleCheck(el){ const cb=el.querySelector('input'); if(cb) cb.checked=!cb.checked; }
+function ra_addCustomSkill(){ const val=document.getElementById('ra-custom-input').value.trim(); if(!val) return; const list=document.getElementById('ra-crit-list'); const div=document.createElement('div'); div.className='ra-crit-item'; div.onclick=()=>ra_toggleCheck(div); div.innerHTML=`<input type="checkbox" value="${val}" checked><label>${val}</label>`; list.appendChild(div); document.getElementById('ra-custom-input').value=''; toast(`Added "${val}"`,'success'); }
+function ra_getSelectedCriteria(){ return Array.from(document.querySelectorAll('#ra-crit-list input:checked')).map(cb=>cb.value); }
+function ra_scoreCriterion(content,criterion){ const kws=RA_SKILL_KEYWORDS[criterion]||[criterion.toLowerCase()]; const lc=content.toLowerCase(); return kws.some(k=>lc.includes(k)); }
+function ra_analyze(){
+  const criteria=ra_getSelectedCriteria();
+  const resumeList=ra_files.length?ra_files:RA_DEMO_RESUMES;
+  if(!criteria.length){ toast('Select at least one criterion'); return; }
+  const btn=document.getElementById('ra-analyse-btn'); btn.disabled=true;
+  setTimeout(()=>{
+    const results=resumeList.map(r=>{
+      const matchMap=criteria.map(c=>({crit:c, matched:ra_scoreCriterion(r.content,c)}));
+      const matchedList=matchMap.filter(x=>x.matched).map(x=>x.crit);
+      const score=criteria.length?Math.round((matchedList.length/criteria.length)*100):50;
+      const tier=score>=75?'strong':score>=45?'moderate':'weak';
+      return {...r,score,tier,matchMap,skills:matchedList,insight:score>=75?'⭐ Strong match, recommend for interview.':score>=45?'👍 Good fit, consider screening.':'⚠️ Low match, consider other roles.'};
+    }).sort((a,b)=>b.score-a.score);
+    ra_renderResults(results,criteria);
+    btn.disabled=false;
+    toast(`Analyzed ${results.length} candidates`,'success');
+  },500);
+}
+function ra_renderResults(results,criteria){
+  const cands=document.getElementById('ra-cands');
+  const stats=document.getElementById('ra-stats-row');
+  const strong=results.filter(r=>r.tier==='strong').length;
+  const avg=results.length?Math.round(results.reduce((s,r)=>s+r.score,0)/results.length):0;
+  stats.innerHTML=`<span class="ra-stat">📊 ${results.length} candidates</span><span class="ra-stat" style="color:var(--green)">✅ ${strong} strong</span><span class="ra-stat">avg ${avg}%</span>`;
+  cands.innerHTML=results.map(r=>{
+    const matchBars=r.matchMap.map(m=>`<div class="ra-match-item"><span class="ra-match-icon">${m.matched?'✅':'○'}</span><span class="ra-match-label">${m.crit}</span><div class="ra-match-bar"><div class="ra-match-fill ${m.matched?'hi':'lo'}" style="width:${m.matched?90:25}%"></div></div></div>`).join('');
+    return `<div class="ra-cand-card tier-${r.tier}"><div class="ra-cc-top"><div class="ra-cc-name">${r.name}</div><div class="ra-cc-pct ${r.tier}">${r.score}%</div></div><div class="ra-match-list">${matchBars}</div><div class="ra-skill-tags">${r.skills.slice(0,3).map(s=>`<span class="ra-skill-tag">${s}</span>`).join('')}</div><div class="ra-insight">💡 ${r.insight}</div><div class="ra-cc-actions"><button class="ra-cc-btn shortlist" onclick="event.stopPropagation();toast('${r.name} shortlisted ✓','success')">✓ Shortlist</button></div></div>`;
+  }).join('');
+}
+
+// Core functions
+function renderRoles(){
+  const q=document.getElementById('role-search').value.toLowerCase();
+  const list=roles.filter(r=>r.status==='open').filter(r=>!q||r.title.toLowerCase().includes(q)||r.dept.toLowerCase().includes(q));
+  document.getElementById('open-count').textContent=`${list.length} open`;
+  document.getElementById('roles-sub').textContent=`${list.length} roles`;
+  document.getElementById('role-list').innerHTML=list.map(r=>{
+    const cands=candidates.filter(c=>c.roleId===r.id);
+    const daysOpen=daysSince(r.opened);
+    const cls=['role-item',r.id===currentRole?'active':'',daysOpen>30?'ageing':''].filter(Boolean).join(' ');
+    return `<div class="${cls}" onclick="selectRole(${r.id})">
+      <div class="ri-top"><div class="ri-title">${r.title}</div><span class="ri-dept">${r.dept}</span></div>
+      <div class="ri-meta"><span class="ri-status ${r.status}">${r.status}</span><span class="ri-days">📅 ${daysOpen}d</span><span class="ri-candidates">👥 ${cands.length}</span></div>
+      ${daysOpen>30?`<div class="warn-tag">⚠️ Ageing (${daysOpen}d)</div>`:''}
+    </div>`;
+  }).join('');
+}
+function selectRole(id){ currentRole=id; renderRoles(); renderKanban(); }
+function renderKanban(){
+  const role=roles.find(r=>r.id===currentRole);
+  if(!role){ document.getElementById('kanban').innerHTML='<div style="padding:40px;color:var(--muted);text-align:center">Select a role to view pipeline.</div>'; document.getElementById('pipe-role-name').textContent='Select a role'; return; }
+  document.getElementById('pipe-role-name').textContent=role.title;
+  document.getElementById('pipe-role-sub').textContent=`${role.dept} · ${role.loc} · ${role.manager} · ${daysSince(role.opened)}d open`;
+  const cands=candidates.filter(c=>c.roleId===currentRole);
+  document.getElementById('kanban').innerHTML=STAGES.map(stage=>{
+    const sc=cands.filter(c=>c.stage===stage);
+    return `<div class="kstage"><div class="kstage-hdr"><span class="kstage-name">${stage}</span><span class="kstage-count">${sc.length}</span></div><div class="kstage-body">${sc.length?sc.map(c=>candCard(c)).join(''):'<div style="font-size:.7rem;color:var(--dim);padding:8px;text-align:center">Empty</div>'}</div></div>`;
+  }).join('');
+}
+function candCard(c){
+  const fit=c.fit||0;
+  const fitCls=fit>=8?'high':fit>=6?'mid':'low';
+  const nextStage=STAGES[STAGES.indexOf(c.stage)+1];
+  return `<div class="cand-card"><div class="cc-name">${c.name}<span class="fit-badge ${fitCls}">${fit}/10</span></div><div class="cc-role">${c.email}</div><div class="cc-meta"><span class="src-tag">${c.src}</span></div>${c.notes?`<div style="font-size:.68rem;color:var(--muted);margin-top:5px">${c.notes}</div>`:''}<div class="cc-actions">${nextStage?`<button class="cc-btn move" onclick="moveCandidate(${c.id},'${nextStage}')">→ ${nextStage}</button>`:''}<button class="cc-btn" onclick="showEmailTemplate(${c.id})">✉</button><button class="cc-btn" onclick="rejectCandidate(${c.id})">✕</button></div></div>`;
+}
+function moveCandidate(id,newStage){ const c=candidates.find(x=>x.id===id); if(c){ c.stage=newStage; c.stageChangedAt=dStr(0); renderKanban(); updateAnalytics(); toast(`${c.name} → ${newStage}`,'success'); setTimeout(()=>showEmailTemplate(id),500); } }
+function rejectCandidate(id){ const c=candidates.find(x=>x.id===id); if(c){ c.stage='Rejected'; renderKanban(); updateAnalytics(); toast(`${c.name} rejected`); } }
+
+let funnelChart=null, stageChart=null;
+function updateAnalytics(){
+  const stageCounts=STAGES.slice(0,5).map(s=>candidates.filter(c=>c.stage===s).length);
+  if(funnelChart) funnelChart.destroy();
+  funnelChart=new Chart(document.getElementById('funnel-chart'),{type:'bar',data:{labels:STAGES.slice(0,5),datasets:[{data:stageCounts,backgroundColor:STAGES.slice(0,5).map(s=>stageColors[s]+'99'),borderRadius:5}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}}});
+  const transitions=[{from:'Applied',to:'Shortlisted'},{from:'Shortlisted',to:'Interviewed'},{from:'Interviewed',to:'Offered'}];
+  document.getElementById('bn-list').innerHTML=transitions.map(t=>{const fromCount=candidates.filter(c=>STAGES.indexOf(c.stage)>=STAGES.indexOf(t.from)).length; const toCount=candidates.filter(c=>STAGES.indexOf(c.stage)>=STAGES.indexOf(t.to)).length; const pct=fromCount?Math.round(toCount/fromCount*100):0; const cls=pct<30?'bad':pct<60?'mid':'ok'; return `<div class="bn-item"><span class="bn-stages">${t.from} → ${t.to}</span><span class="bn-pct ${cls}">${pct}%</span></div>`;}).join('');
+  const srcMap={}; candidates.forEach(c=>{srcMap[c.src]=(srcMap[c.src]||0)+1;});
+  const total=candidates.length;
+  document.getElementById('src-list').innerHTML=Object.entries(srcMap).map(([src,count])=>`<div class="src-row"><span class="src-name">${src}</span><div class="src-bar-wrap"><div class="src-bar" style="width:${Math.round(count/total*100)}%"></div></div><span class="src-num">${count}</span></div>`).join('');
+  document.getElementById('tth-list').innerHTML='<div class="tth-row"><span>Data gathering</span><span>—</span></div>';
+  if(stageChart) stageChart.destroy();
+  stageChart=new Chart(document.getElementById('stage-chart'),{type:'doughnut',data:{labels:STAGES,datasets:[{data:STAGES.map(s=>candidates.filter(c=>c.stage===s).length),backgroundColor:Object.values(stageColors),borderWidth:0,cutout:'60%'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#6b7280',font:{size:10}}}}}});
+}
+function showEmailTemplate(id){ const c=candidates.find(x=>x.id===id); const r=roles.find(x=>x.id===c.roleId); if(!c||!r)return; const tpl=`Subject: Update on your application for ${r.title}\n\nDear ${c.name.split(' ')[0]},\n\nThank you for your interest in the ${r.title} position at WorkSphere.\n\nYour application is currently in the ${c.stage} stage. We will keep you updated.\n\nBest regards,\nWorkSphere HR Team`; document.getElementById('email-modal-title').innerHTML=`Email — ${c.stage}`; document.getElementById('email-tpl-body').innerHTML=tpl; document.getElementById('email-overlay').classList.add('open'); }
+function copyEmail(){ const text=document.getElementById('email-tpl-body').innerText; navigator.clipboard.writeText(text); toast('Email copied ✓','success'); }
+function openAddRole(){ document.getElementById('role-overlay').classList.add('open'); }
+function openAddCandidate(){ const sel=document.getElementById('c-role'); sel.innerHTML=roles.filter(r=>r.status==='open').map(r=>`<option value="${r.id}" ${r.id===currentRole?'selected':''}>${r.title}</option>`).join(''); document.getElementById('cand-overlay').classList.add('open'); }
+function addRole(){ const title=document.getElementById('r-title').value.trim(); if(!title){toast('Enter title');return;} roles.push({id:nextRoleId++,title,dept:document.getElementById('r-dept').value||'General',loc:document.getElementById('r-loc').value||'Remote',status:document.getElementById('r-status').value,manager:document.getElementById('r-manager').value||'TBD',jd:document.getElementById('r-jd').value||'',opened:dStr(0)}); document.querySelectorAll('#r-title,#r-dept,#r-loc,#r-manager,#r-jd').forEach(i=>i.value=''); closeModal('role-overlay'); renderRoles(); toast('Role posted ✓','success'); }
+function addCandidate(){ const name=document.getElementById('c-name').value.trim(); if(!name){toast('Enter name');return;} candidates.push({id:nextCandId++,name,email:document.getElementById('c-email').value,roleId:parseInt(document.getElementById('c-role').value),src:document.getElementById('c-src').value,stage:document.getElementById('c-stage').value,fit:parseInt(document.getElementById('c-fit').value)||0,notes:document.getElementById('c-notes').value,appliedAt:dStr(0),stageChangedAt:dStr(0)}); document.querySelectorAll('#c-name,#c-email,#c-notes,#c-fit').forEach(i=>i.value=''); closeModal('cand-overlay'); renderRoles(); if(currentRole===parseInt(document.getElementById('c-role').value)) renderKanban(); toast(`${name} added ✓`,'success'); }
+function aiScreenAll(){ if(!currentRole){toast('Select a role first');return;} document.getElementById('ai-result-box').innerHTML='✨ AI screening would analyze candidates based on job description. Feature ready for API integration.'; document.getElementById('ai-overlay').classList.add('open'); }
+function setRTab(tab,btn){ currentRightTab=tab; document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active')); document.getElementById(`tab-${tab}`).classList.add('active'); if(tab==='analytics') updateAnalytics(); if(tab==='myinterviews') renderMyInterviews(); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeOv(e,id){ if(e.target===document.getElementById(id)) closeModal(id); }
+function toast(msg,type=''){ const wrap=document.getElementById('toast-wrap'); const el=document.createElement('div'); el.className=`toast ${type}`; el.textContent=msg; wrap.appendChild(el); requestAnimationFrame(()=>el.classList.add('show')); setTimeout(()=>{el.classList.remove('show'); setTimeout(()=>el.remove(),400);},3500); }
+
+// Init
+function initCriteria(){ const list=document.getElementById('ra-crit-list'); list.innerHTML=['React / Frontend','Node.js / Backend','Python / Data Science','AWS / Cloud','Leadership / Management','System Design'].map(s=>`<div class="ra-crit-item" onclick="ra_toggleCheck(this)"><input type="checkbox" value="${s}" checked><label>${s}</label></div>`).join(''); }
+initCriteria(); renderRoles(); selectRole(1); renderMyInterviews();
+</script>
+</body>
+</html>
